@@ -1,5 +1,5 @@
 {
     "boilerplate_name": "bootstrap3", 
-    "cms_templates": "[]", 
+    "cms_templates": "[[\"fullwidth.html\", \"full width\"], [\"sidebar_left.html\", \"sidebar left\"], [\"sidebar_right.html\", \"sidebar right\"], [\"tpl_home.html\", \"home template\"]]", 
     "permissions_enabled": true
 }
