@@ -6,3 +6,9 @@ https://control.aldryn.com/api/v1/apps/serve/aldryn-django-cms/3.2.3.0/c968f4fa-
 https://control.aldryn.com/api/v1/apps/serve/aldryn-devsync/1.0.0/3ef3b0f0-2f98-4ca3-a4af-31d02b8ce6cb/aldryn-devsync-1.0.0.tar.gz#egg=aldryn-devsync==1.0.0
 https://control.aldryn.com/api/v1/apps/serve/aldryn-celery/0.4/3ecdb83c-9f5f-499f-99a6-cba160d79bac/aldryn-celery-0.4.tar.gz#egg=aldryn-celery==0.4
 # </INSTALLED_ADDONS>
+
+ipython
+ipdb
+dateparser
+recurrent
+django-chainable-manager

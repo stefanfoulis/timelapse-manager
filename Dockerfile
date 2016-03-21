@@ -2,6 +2,11 @@
 FROM aldryn/base-project:3.1.0
 # </DOCKER_FROM>
 
+ENV PYTHONPATH /app/src:$PYTHONPATH
+
+COPY stack/imageopt /stack/imageopt
+RUN /stack/imageopt/install.sh
+
 # <DOCKER_BUILD>  # Warning: text inside the DOCKER_BUILD tags is auto-generated. Manual changes will be overwritten.
 
 # node modules
@@ -41,4 +46,3 @@ RUN gulp build; exit 0
 RUN DJANGO_MODE=build python manage.py collectstatic --noinput --link
 
 # </DOCKER_BUILD>
-

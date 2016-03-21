@@ -14,17 +14,20 @@ INSTALLED_ADDONS = [
 import aldryn_addons.settings
 aldryn_addons.settings.load(locals())
 
-
 # all django settings can be altered here
 
 INSTALLED_APPS.extend([
     # add you project specific apps here
+    'timelapse_manager',
+    'taggit',
 ])
 
-TEMPLATE_CONTEXT_PROCESSORS.extend([
-    # add your template context processors here
-])
+THUMBNAIL_OPTIMIZE_COMMAND = {
+    'png': '/usr/bin/optipng -o7 {filename}',
+    'gif': '/usr/bin/optipng -o7 {filename}',
+    'jpeg': '/usr/bin/jpegoptim {filename}',
+}
 
-MIDDLEWARE_CLASSES.extend([
-    # add your own middlewares here
-])
+
+# disable multi-language support
+USE_I18N = False
