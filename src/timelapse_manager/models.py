@@ -55,19 +55,26 @@ class ImageManager(ChainableManager):
 class Image(UUIDAuditedModel):
     sizes = ('640x480', '320x240', '160x120')
     camera = models.ForeignKey(Camera, related_name='images')
+    name = models.CharField(max_length=255, blank=True, default='')
     shot_at = models.DateTimeField(null=True, blank=True, default=None)
-    original = ThumbnailerImageField(null=True, blank=True, default='')
+    original = ThumbnailerImageField(
+        null=True, blank=True, default='', max_length=255)
     scaled_at_160x120 = ThumbnailerImageField(
-        null=True, blank=True, default='',
+        null=True, blank=True, default='', max_length=255,
         upload_to=partial(storage.upload_to_thumbnail, size='160x120'))
     scaled_at_320x240 = ThumbnailerImageField(
-        null=True, blank=True, default='',
+        null=True, blank=True, default='', max_length=255,
         upload_to=partial(storage.upload_to_thumbnail, size='320x240'))
     scaled_at_640x480 = ThumbnailerImageField(
-        null=True, blank=True, default='',
+        null=True, blank=True, default='', max_length=255,
         upload_to=partial(storage.upload_to_thumbnail, size='640x480'))
 
     objects = ImageManager()
+
+    class Meta:
+        unique_together = (
+            ('camera', 'name',),
+        )
 
     def __str__(self):
         return self.original.name
@@ -141,7 +148,7 @@ class Day(UUIDAuditedModel):
 
     def set_key_frames(self):
         from . import actions
-        actions.set_keyframes_for_image(self)
+        actions.set_keyframes_for_day(self)
 
     def create_keyframe_thumbnails(self, force=False):
         print('creating thumbnails for {}'.format(self))
@@ -149,5 +156,3 @@ class Day(UUIDAuditedModel):
             self.cover.create_thumbnails(force=force)
         for key_frame in self.key_frames.all():
             key_frame.create_thumbnails(force=force)
-
-

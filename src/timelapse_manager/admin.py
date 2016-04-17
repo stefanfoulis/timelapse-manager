@@ -4,14 +4,8 @@ from django.contrib import admin
 from .models import Camera, Image, Annotation, Day
 
 
-class AnnotationInlineAdmin(admin.TabularInline):
-    model = Annotation
-
-
 class CameraAdmin(admin.ModelAdmin):
-    inlines = (
-        AnnotationInlineAdmin,
-    )
+    pass
 
 
 class ImageAdmin(admin.ModelAdmin):
@@ -19,11 +13,15 @@ class ImageAdmin(admin.ModelAdmin):
         'camera',
         'shot_at',
         'original',
+        'scaled_at_640x480',
+        'scaled_at_320x240',
+        'scaled_at_160x120',
     )
     list_filter = (
         'camera',
         # TODO: filter by has original, has scaled
     )
+    date_hierarchy = 'shot_at'
     search_fields = (
         'original',
         # 'scaled_at_640x480',
@@ -54,10 +52,19 @@ class DayAdmin(admin.ModelAdmin):
         'set_keyframes_action',
         'create_keyframe_thumbnails_action',
     )
+    raw_id_fields = (
+        'cover',
+    )
+    fields = (
+        'camera',
+        'date',
+        'cover',
+    )
 
     def get_queryset(self, request):
         qs = super(DayAdmin, self).get_queryset(request)
         qs = qs.select_related('cover')
+        qs = qs.prefetch_related('key_frames')
 
         return qs
 

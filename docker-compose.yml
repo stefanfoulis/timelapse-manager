@@ -3,14 +3,20 @@ web:
  links:
   - "db:postgres"
  ports:
-  - "8000:80"
+  - "49893:80"
  volumes:
   - ".:/app:rw"
   - "./data:/data:rw"
+  # - "../_input:/data/media/timelapse:rw"
+  - "/Volumes/Timelapse:/data/media/timelapse:rw"
  command: python manage.py runserver 0.0.0.0:80
  env_file: .env-local
+ environment:
+  VIRTUAL_HOST: timelapse-manager.aldryn.me
 
 db:
  image: postgres:9.4
  volumes:
   - ".:/app:rw"
+ environment:
+  POSTGRES_DB: db

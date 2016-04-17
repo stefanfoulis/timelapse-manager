@@ -12,3 +12,4 @@ ipdb
 dateparser
 recurrent
 django-chainable-manager
+django-taggit

@@ -2,6 +2,7 @@
 from __future__ import unicode_literals, absolute_import
 
 import datetime
+
 from django.core.files.storage import default_storage
 
 from timelapse_manager.models import Image
@@ -13,27 +14,34 @@ def discover_images(storage=default_storage):
     """
     directory relative to default storage root
     """
-    original_basedir = 'timelapse/overview/original'
-    thumbsizes = ('640x480', '320x240', '160x120')
+    basedir = 'timelapse/overview'
+    sizes = ('original', '640x480', '320x240', '160x120')
     camera = models.Camera.objects.all().first()
-    for daydir in storage.listdir(original_basedir)[0]:
-        for imagename in storage.listdir('{}/{}'.format(original_basedir, daydir))[1]:
-            if not imagename.lower().endswith('.jpg'):
-                continue
-            print('discovered {} {}'.format(daydir, imagename))
-            shot_at = utils.datetime_from_filename(imagename)
-            imagepath = '/'.join([original_basedir, daydir, imagename])
-            defaults = {'shot_at': shot_at}
-            for thumbsize in thumbsizes:
-                thumbpath = 'timelapse/overview/{}/{}/{}'.format(
-                    thumbsize, daydir, imagename)
-                if storage.exists(thumbpath):
-                    defaults['scaled_at_{}'.format(thumbsize)] = thumbpath
-            image = models.Image.objects.update_or_create(
-                camera=camera,
-                original=imagepath,
-                defaults=defaults,
-            )
+    for size in sizes:
+        size_basedir = '/'.join([basedir, size])
+        for daydir in storage.listdir(size_basedir)[0]:
+            for imagename in storage.listdir('{}/{}'.format(size_basedir, daydir))[1]:
+                if not imagename.lower().endswith('.jpg'):
+                    continue
+                shot_at = utils.datetime_from_filename(imagename)
+                imagepath = '/'.join([size_basedir, daydir, imagename])
+                defaults = {
+                    'shot_at': shot_at,
+                }
+                if size == 'original':
+                    defaults['original'] = imagepath
+                else:
+                    defaults['scaled_at_{}'.format(size)] = imagepath
+                image, created = models.Image.objects.update_or_create(
+                    camera=camera,
+                    name=imagename,
+                    defaults=defaults,
+                )
+                if created:
+                    print('first size found {} {}'.format(size, imagename))
+                else:
+                    print('discovered. possibly new. {} {}'.format(size, imagename))
+
 
 
 def create_thumbnail(image, size):
@@ -46,12 +54,6 @@ def create_thumbnail(image, size):
         'upscale': False,
     }
     thumb = thumbnailer.generate_thumbnail(options)
-    # import types
-    # from django.db.models.fields.files import FieldFile
-    #
-    # def save(*args, **kwargs):
-    #     FieldFile.save(*args, **kwargs)
-    # thumb.save = types.MethodType(save, thumb)
     content_file = thumb.file
     content_file.name = 'afile.jpg'
     setattr(image, 'scaled_at_{}'.format(size), content_file)
@@ -60,18 +62,19 @@ def create_thumbnail(image, size):
 def create_thumbnails(image, force=False):
     for size in image.sizes:
         if force or not getattr(image, 'scaled_at_{}'.format(size)):
+            print('  creating thumbnail {} {}'.format(image, size))
             create_thumbnail(image, size)
         else:
-            print('  skipping {} {}'.format(image, size))
+            print('  thumbnail already exists {} {}'.format(image, size))
 
 
-def set_keyframes_for_image(image):
-    image.cover = Image.objects.pick_closest(
-        camera=image.camera,
-        shot_at=datetime.datetime.combine(self.date, datetime.time(16, 0)),
+def set_keyframes_for_day(day):
+    day.cover = Image.objects.pick_closest(
+        camera=day.camera,
+        shot_at=datetime.datetime.combine(day.date, datetime.time(16, 0)),
         max_difference=datetime.timedelta(hours=2)
     )
-    image.save()
+    day.save()
     keyframes = [
         datetime.time(6, 0),
         datetime.time(9, 0),
@@ -82,10 +85,10 @@ def set_keyframes_for_image(image):
     images = []
     for keyframe in keyframes:
         image = Image.objects.pick_closest(
-            camera=image.camera,
-            shot_at=datetime.datetime.combine(self.date, keyframe),
+            camera=day.camera,
+            shot_at=datetime.datetime.combine(day.date, keyframe),
             max_difference=datetime.timedelta(hours=1)
         )
         if image:
             images.append(image)
-    image.key_frames = images
+    day.key_frames = images
