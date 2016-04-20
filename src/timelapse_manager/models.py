@@ -6,9 +6,9 @@ from functools import partial
 
 import datetime
 from django.db import models
+from django.db.models import Q
 from django.utils.encoding import python_2_unicode_compatible
 
-import taggit.managers
 from chainablemanager.manager import ChainableManager
 
 from easy_thumbnails.fields import ThumbnailerImageField
@@ -36,7 +36,20 @@ class Camera(UUIDAuditedModel):
 
 class ImageManager(ChainableManager):
     class QuerySetMixin(object):
-        pass
+        def with_missing_thumbnails(self, camera=None):
+            qs = self.filter(original__isnull=False)
+            if camera:
+                qs = qs.filter(camera=camera)
+            qs = qs.filter((
+                Q(scaled_at_160x120='') |
+                Q(scaled_at_320x240='') |
+                Q(scaled_at_640x480='')
+            ))
+            return qs
+
+        def create_missing_thumbnails(self, camera=None):
+            for img in self.with_missing_thumbnails(camera=camera).iterator():
+                img.create_thumbnails()
 
     def pick_closest(self, camera, shot_at, max_difference=None):
         """
@@ -84,15 +97,20 @@ class Image(UUIDAuditedModel):
         actions.create_thumbnails(self, force=force)
         self.save()
 
+    def tags(self):
+        return Tag.objects.filter(
+            camera=self.camera,
+            start_at__lte=self.shot_at,
+            end_at__gte=self.shot_at,
+        )
+
 
 @python_2_unicode_compatible
-class Annotation(UUIDAuditedModel):
-    camera = models.ForeignKey(Camera, related_name='annotations')
-    name = models.CharField(blank=True, default='', max_length=255)
-    notes = models.TextField(blank=True, default='')
-    start_at = models.DateTimeField(null=True, blank=True, default=None)
-    end_at = models.DateTimeField(null=True, blank=True, default=None)
-    tags = taggit.managers.TaggableManager()
+class Tag(UUIDAuditedModel):
+    camera = models.ForeignKey(Camera, related_name='tags')
+    name = models.CharField(max_length=255)
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField()
 
     def images(self):
         return Image.objects.filter(
@@ -103,6 +121,38 @@ class Annotation(UUIDAuditedModel):
 
     def __str__(self):
         return self.name
+
+    def tag_info(self):
+        return TagInfo.objects.get_or_create(name=self.name)[0]
+
+    def save(self, *args, **kwargs):
+        r = super(Tag, self).save(*args, **kwargs)
+        TagInfo.objects.get_or_create(name=self.name)
+        return r
+
+    def duration(self):
+        return self.end_at - self.start_at
+
+    def image_count(self):
+        return self.images().count()
+
+    def get_q(self, fieldname):
+        return Q(**{
+            '{}__gte'.format(fieldname): self.start_at,
+            '{}__lte'.format(fieldname): self.end_at,
+        })
+
+
+@python_2_unicode_compatible
+class TagInfo(UUIDAuditedModel):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, default='')
+
+    def __str__(self):
+        return self.name
+
+    def tags(self):
+        return Tag.objects.filter(name=self.name)
 
 
 class DayManager(ChainableManager):
@@ -156,3 +206,55 @@ class Day(UUIDAuditedModel):
             self.cover.create_thumbnails(force=force)
         for key_frame in self.key_frames.all():
             key_frame.create_thumbnails(force=force)
+
+
+@python_2_unicode_compatible
+class Movie(UUIDAuditedModel):
+    camera = models.ForeignKey(Camera, related_name='movies')
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, default=None)
+
+    speed_factor = models.FloatField(default=4000.0)
+    tags = models.ManyToManyField(TagInfo, related_name='movies')
+
+    class Meta:
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
+    def tag_instances(self):
+        tag_names = self.tags.values_list('name', flat=True)
+        return Tag.objects.filter(name__in=tag_names)
+
+    def images(self):
+        qs = Image.objects.filter(
+            camera=self.camera,
+        )
+        q = Q(name__isnull=True)  # it is always false
+        for tag in self.tag_instances():
+            q = q | tag.get_q('shot_at')
+        qs = qs.filter(q)
+        return qs
+
+    def tags_display(self):
+        return ', '.join(['{} ({} -> {})'.format(tag.name, tag.start_at, tag.end_at) for tag in self.tag_instances()])
+
+
+    def image_count(self):
+        return self.images().count()
+
+
+@python_2_unicode_compatible
+class MovieRendering(UUIDAuditedModel):
+    movie = models.ForeignKey(Movie, related_name='renderings')
+    fps = models.FloatField(default=15.0)
+    format = models.CharField(default='mp4', max_length=255)
+    file = models.FileField(blank=True, default='', max_length=255)
+
+    def __str__(self):
+        return "{}: {} {}fps".format(self.movie, self.format, self.fps)
+
+    def render(self):
+        from . import actions
+        actions.render_movie(movie_rendering=self)

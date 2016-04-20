@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 from django.contrib import admin
-from .models import Camera, Image, Annotation, Day
+from .models import Camera, Image, Day, Tag, TagInfo, Movie, MovieRendering
 
 
 class CameraAdmin(admin.ModelAdmin):
@@ -35,10 +35,6 @@ class ImageAdmin(admin.ModelAdmin):
     def create_thumbnails_action(self, request, queryset):
         for image in queryset:
             image.create_thumbnails()
-
-
-class AnnotationAdmin(admin.ModelAdmin):
-    pass
 
 
 class DayAdmin(admin.ModelAdmin):
@@ -99,7 +95,45 @@ class DayAdmin(admin.ModelAdmin):
         return "&nbsp;".join(html_list)
     keyframes_img.allow_tags = True
 
+
+class TagAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'start_at',
+        'end_at',
+        'duration',
+        'image_count',
+    )
+    readonly_fields = (
+        'image_count',
+        'duration',
+    )
+
+
+class TagInfoAdmin(admin.ModelAdmin):
+    pass
+
+
+class MovieAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'tags_display',
+        'image_count',
+    )
+    readonly_fields = (
+        'tags_display',
+        'image_count',
+    )
+
+
+class MovieRenderingAdmin(admin.ModelAdmin):
+    pass
+
+
 admin.site.register(Camera, CameraAdmin)
 admin.site.register(Image, ImageAdmin)
-admin.site.register(Annotation, AnnotationAdmin)
 admin.site.register(Day, DayAdmin)
+admin.site.register(Tag, TagAdmin)
+admin.site.register(TagInfo, TagInfoAdmin)
+admin.site.register(Movie, MovieAdmin)
+admin.site.register(MovieRendering, MovieRenderingAdmin)
