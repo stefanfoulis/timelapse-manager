@@ -13,3 +13,5 @@ dateparser
 recurrent
 django-chainable-manager
 django-taggit
+django-extended-choices
+moviepy

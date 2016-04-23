@@ -3,14 +3,16 @@ from __future__ import unicode_literals, absolute_import
 
 import datetime
 
+import os
 from django.core.files.storage import default_storage
+from django.core.files import File
 
 from timelapse_manager.models import Image
 from . import models, utils
 import easy_thumbnails.files
 
 
-def discover_images(storage=default_storage):
+def discover_images(storage=default_storage, daydir_prefix=None):
     """
     directory relative to default storage root
     """
@@ -20,6 +22,8 @@ def discover_images(storage=default_storage):
     for size in sizes:
         size_basedir = '/'.join([basedir, size])
         for daydir in storage.listdir(size_basedir)[0]:
+            if daydir_prefix and not daydir.startswith(daydir_prefix):
+                continue
             for imagename in storage.listdir('{}/{}'.format(size_basedir, daydir))[1]:
                 if not imagename.lower().endswith('.jpg'):
                     continue
@@ -41,7 +45,6 @@ def discover_images(storage=default_storage):
                     print('first size found {} {}'.format(size, imagename))
                 else:
                     print('discovered. possibly new. {} {}'.format(size, imagename))
-
 
 
 def create_thumbnail(image, size):
@@ -92,3 +95,23 @@ def set_keyframes_for_day(day):
         if image:
             images.append(image)
     day.key_frames = images
+
+
+def image_count_by_type():
+    qs = Image.objects.all()
+    data = {
+        '160x120': qs.exclude(scaled_at_160x120='').count(),
+        '320x240': qs.exclude(scaled_at_320x240='').count(),
+        '640x480': qs.exclude(scaled_at_640x480='').count(),
+        'original': qs.exclude(original='').count(),
+    }
+    return '  '.join(['{}: {}'.format(key, value) for key, value in data.items()])
+
+
+def render_movie(movie_rendering):
+    from . import moviepy
+    moviepath = moviepy.render_video(movie_rendering.movie.images())
+    with open(moviepath, 'rb') as f:
+        django_file = File(f)
+        movie_rendering.file.save(os.path.basename(moviepath), django_file, save=True)
+        movie_rendering.save()

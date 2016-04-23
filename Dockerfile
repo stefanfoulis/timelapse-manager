@@ -7,6 +7,9 @@ ENV PYTHONPATH /app/src:$PYTHONPATH
 COPY stack/imageopt /stack/imageopt
 RUN /stack/imageopt/install.sh
 
+COPY stack/moviepy /stack/moviepy
+RUN /stack/moviepy/install.sh
+
 # <DOCKER_BUILD>  # Warning: text inside the DOCKER_BUILD tags is auto-generated. Manual changes will be overwritten.
 
 # node modules

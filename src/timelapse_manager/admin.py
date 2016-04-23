@@ -127,7 +127,20 @@ class MovieAdmin(admin.ModelAdmin):
 
 
 class MovieRenderingAdmin(admin.ModelAdmin):
-    pass
+    actions = (
+        'render_action',
+    )
+    readonly_fields = (
+        'preview_html',
+    )
+
+    def render_action(self, request, queryset):
+        for obj in queryset:
+            obj.render()
+
+    def preview_html(self, obj):
+        return '''<img src="{}" />'''.format(obj.file.url)
+    preview_html.allow_tags = True
 
 
 admin.site.register(Camera, CameraAdmin)

@@ -10,8 +10,8 @@ from django.db.models import Q
 from django.utils.encoding import python_2_unicode_compatible
 
 from chainablemanager.manager import ChainableManager
-
 from easy_thumbnails.fields import ThumbnailerImageField
+from extended_choices import Choices
 
 from . import storage
 
@@ -66,7 +66,11 @@ class ImageManager(ChainableManager):
 
 @python_2_unicode_compatible
 class Image(UUIDAuditedModel):
-    sizes = ('640x480', '320x240', '160x120')
+    sizes = (
+        '640x480',
+        '320x240',
+        '160x120',
+    )
     camera = models.ForeignKey(Camera, related_name='images')
     name = models.CharField(max_length=255, blank=True, default='')
     shot_at = models.DateTimeField(null=True, blank=True, default=None)
@@ -104,6 +108,17 @@ class Image(UUIDAuditedModel):
             end_at__gte=self.shot_at,
         )
 
+    def get_file_for_size(self, size):
+        if size == 'original':
+            return self.original or None
+        assert size in ['160x120', '320x240', '640x480']
+        if not getattr(self, 'scaled_at_{}'.format(size)):
+            if self.original:
+                self.create_thumbnails()
+            else:
+                return None
+        return getattr(self, 'scaled_at_{}'.format(size))
+
 
 @python_2_unicode_compatible
 class Tag(UUIDAuditedModel):
@@ -113,11 +128,14 @@ class Tag(UUIDAuditedModel):
     end_at = models.DateTimeField()
 
     def images(self):
+        if not (self.start_at and self.end_at):
+            return Image.objects.empty()
         return Image.objects.filter(
             camera=self.camera,
             shot_at__gte=self.start_at,
             shot_at__lte=self.end_at,
         )
+
 
     def __str__(self):
         return self.name
@@ -131,6 +149,8 @@ class Tag(UUIDAuditedModel):
         return r
 
     def duration(self):
+        if not (self.start_at and self.end_at):
+            return None
         return self.end_at - self.start_at
 
     def image_count(self):
@@ -215,7 +235,7 @@ class Movie(UUIDAuditedModel):
     description = models.TextField(blank=True, default=None)
 
     speed_factor = models.FloatField(default=4000.0)
-    tags = models.ManyToManyField(TagInfo, related_name='movies')
+    tags = models.ManyToManyField(TagInfo, related_name='movies', blank=True)
 
     class Meta:
         ordering = ('name',)
@@ -235,11 +255,10 @@ class Movie(UUIDAuditedModel):
         for tag in self.tag_instances():
             q = q | tag.get_q('shot_at')
         qs = qs.filter(q)
-        return qs
+        return qs.distinct()
 
     def tags_display(self):
         return ', '.join(['{} ({} -> {})'.format(tag.name, tag.start_at, tag.end_at) for tag in self.tag_instances()])
-
 
     def image_count(self):
         return self.images().count()
