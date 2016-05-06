@@ -22,14 +22,13 @@ class ImageViewSet(viewsets.ModelViewSet):
 
 
 class ImageIntakeSerializer(serializers.Serializer):
-    url = serializers.CharField(max_length=255)
+    image_url = serializers.CharField(max_length=255, write_only=True)
 
     def create(self, validated_data):
-        image, created = models.Image.objects.create_or_update_from_url(validated_data['url'])
+        image, created = models.Image.objects.create_or_update_from_url(validated_data['image_url'])
         return image
 
 
 class ImageIntakeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = models.Image.objects.none()
     serializer_class = ImageIntakeSerializer
-

@@ -97,6 +97,12 @@ def normalize_image_url(url):
     """
     if url.startswith('http://') or url.startswith('https://'):
         url = URL(url).path
+        bucket = '/{}/'.format(timelapse_storage.bucket_name)
+        if url.startswith(bucket):
+            url = url[len(bucket):]
+        if url.startswith(timelapse_storage.location):
+            url = url[len(timelapse_storage.location):]
+        return url
     if url.startswith(timelapse_storage.base_url):
         return url[len(timelapse_storage.base_url):]
     return None
