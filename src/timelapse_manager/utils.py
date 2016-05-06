@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import dateparser
+import datetime
 
 
 def datetime_from_filename(filename):
@@ -25,3 +26,9 @@ def original_filename_from_filename(filename):
     split = filename.split('.')
     filename = '{}.{}'.format(split[0], split[-1])
     return filename
+
+
+def daterange(start_on, end_on):
+    day_count = (end_on - start_on).days
+    for day_num in range(0, day_count+1):
+        yield start_on + datetime.timedelta(days=day_num)

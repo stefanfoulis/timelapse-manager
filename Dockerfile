@@ -1,4 +1,4 @@
-FROM stefanfoulis/weiherstrasse-base-test:0.1
+FROM stefanfoulis/weiherstrasse-base-test:py3-0.3
 
 # add full sourcecode
 # -------------------
@@ -6,8 +6,8 @@ COPY . /app
 
 # static compilation with gulp (e.g sass)
 # ---------------------------------------
-ENV GULP_MODE=production
-RUN gulp build; exit 0
+#ENV GULP_MODE=production
+#RUN gulp build; exit 0
 
 # collectstatic
 # -------------

@@ -13,6 +13,7 @@ from chainablemanager.manager import ChainableManager
 from easy_thumbnails.fields import ThumbnailerImageField
 
 from . import storage
+import djcelery
 
 
 class UUIDAuditedModel(models.Model):
@@ -31,6 +32,21 @@ class Camera(UUIDAuditedModel):
 
     def __str__(self):
         return self.name
+
+    def create_days(self):
+        created_days = []
+        for date in self.images.all().dates('shot_at', 'day'):
+            day, created = Day.objects.get_or_create(
+                camera=self,
+                date=date,
+            )
+            if created:
+                created_days.append(day)
+        return created_days
+
+    def discover_images(self):
+        from . import actions
+        actions.discover_images(limit_cameras=[self])
 
 
 class ImageManager(ChainableManager):
@@ -77,7 +93,8 @@ class Image(UUIDAuditedModel):
     )
     camera = models.ForeignKey(Camera, related_name='images')
     name = models.CharField(max_length=255, blank=True, default='')
-    shot_at = models.DateTimeField(null=True, blank=True, default=None)
+    shot_at = models.DateTimeField(
+        null=True, blank=True, default=None, db_index=True)
     original = ThumbnailerImageField(
         null=True, blank=True, default='', max_length=255,
         storage=storage.timelapse_storage)
@@ -100,6 +117,7 @@ class Image(UUIDAuditedModel):
         unique_together = (
             ('camera', 'shot_at',),
         )
+        ordering = ('shot_at',)
 
     def __str__(self):
         return self.original.name
@@ -143,7 +161,6 @@ class Tag(UUIDAuditedModel):
             shot_at__gte=self.start_at,
             shot_at__lte=self.end_at,
         )
-
 
     def __str__(self):
         return self.name
@@ -201,7 +218,7 @@ class DayManager(ChainableManager):
 @python_2_unicode_compatible
 class Day(UUIDAuditedModel):
     camera = models.ForeignKey(Camera, related_name='days')
-    date = models.DateField()
+    date = models.DateField(db_index=True)
     cover = models.ForeignKey(
         Image, null=True, blank=True, related_name='cover_for_days')
     key_frames = models.ManyToManyField(
@@ -210,7 +227,8 @@ class Day(UUIDAuditedModel):
     objects = DayManager()
 
     class Meta:
-        ordering = ('-date',)
+        ordering = ('date',)
+        unique_together = ('camera', 'date')
 
     def __str__(self):
         return '{}'.format(self.date)
@@ -234,6 +252,13 @@ class Day(UUIDAuditedModel):
             self.cover.create_thumbnails(force=force)
         for key_frame in self.key_frames.all():
             key_frame.create_thumbnails(force=force)
+
+    def discover_images(self):
+        from . import actions
+        actions.discover_images_on_day(
+            camera=self.camera,
+            day_name=str(self.date),
+        )
 
 
 @python_2_unicode_compatible

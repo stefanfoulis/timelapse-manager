@@ -1,11 +1,69 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
-from django.contrib import admin
+
+import datetime
+from django.contrib import admin, messages
+from django.utils.encoding import smart_text
+
 from .models import Camera, Image, Day, Tag, TagInfo, Movie, MovieRendering
+from . import tasks, utils
 
 
 class CameraAdmin(admin.ModelAdmin):
-    pass
+    actions = (
+        'create_days_for_existing_images_action',
+        'create_days_for_oldest_existing_image_until_today_action',
+    )
+
+    def create_days_for_existing_images_action(self, request, queryset):
+        for camera in queryset:
+            days = camera.create_days()
+            self.message_user(
+                request,
+                '{}: created {} days. Now has a total of {} days.'.format(
+                    camera,
+                    len(days),
+                    camera.days.all().count(),
+                )
+            )
+
+    def create_days_for_oldest_existing_image_until_today_action(self, request, queryset):
+        for camera in queryset:
+            day_one = camera.images.order_by('shot_at').first()
+            if not day_one:
+                self.message_user(
+                    request,
+                    '{}: no existing images!',
+                    level=messages.WARNING,
+                )
+                continue
+            days = []
+            start_on = day_one.shot_at.date()
+            end_on = datetime.date.today()
+            for date in utils.daterange(
+                start_on=start_on,
+                end_on=end_on,
+            ):
+                day, created = Day.objects.get_or_create(
+                    camera=camera,
+                    date=date,
+                )
+                if created:
+                    days.append(day)
+            self.message_user(
+                request,
+                '{}: created {} days. Now has a total of {} days. ({} - {})'.format(
+                    camera,
+                    len(days),
+                    camera.days.all().count(),
+                    start_on,
+                    end_on,
+                )
+            )
+
+    def discover_images_action(self, request, queryset):
+        for camera in queryset:
+            tasks.discover_images.delay(camera_id=camera.id)
 
 
 class ImageAdmin(admin.ModelAdmin):
@@ -47,6 +105,9 @@ class DayAdmin(admin.ModelAdmin):
     actions = (
         'set_keyframes_action',
         'create_keyframe_thumbnails_action',
+        'set_keyframes_and_create_keyframe_thumbnails_action',
+        'discover_images_action',
+        'discover_images_and_process_action',
     )
     raw_id_fields = (
         'cover',
@@ -56,12 +117,15 @@ class DayAdmin(admin.ModelAdmin):
         'date',
         'cover',
     )
+    ordering = (
+        '-date',
+    )
+    date_hierarchy = 'date'
 
     def get_queryset(self, request):
         qs = super(DayAdmin, self).get_queryset(request)
         qs = qs.select_related('cover')
         qs = qs.prefetch_related('key_frames')
-
         return qs
 
     def set_keyframes_action(self, request, queryset):
@@ -70,7 +134,30 @@ class DayAdmin(admin.ModelAdmin):
 
     def create_keyframe_thumbnails_action(self, request, queryset):
         for day in queryset:
-            day.create_keyframe_thumbnails()
+            tasks.create_keyframe_thumbnails_on_day.delay(
+                day_id=smart_text(day.id))
+
+    def set_keyframes_and_create_keyframe_thumbnails_action(
+            self, request, queryset):
+        for day in queryset:
+            tasks.create_keyframe_thumbnails_on_day.delay(
+                day_id=smart_text(day.id),
+                create_thumbnails=True,
+            )
+
+    def discover_images_action(self, request, queryset):
+        for day in queryset:
+            tasks.discover_images_on_day.delay(
+                day_id=smart_text(day.id))
+
+    def discover_images_and_process_action(
+            self, request, queryset):
+        for day in queryset:
+            tasks.discover_images_on_day.delay(
+                day_id=smart_text(day.id),
+                set_keyframes=True,
+                create_keyframe_thumbnails=True,
+            )
 
     def cover_img(self, obj):
         image = obj.cover
@@ -114,6 +201,11 @@ class TagInfoAdmin(admin.ModelAdmin):
     pass
 
 
+class MovieRenderingInline(admin.TabularInline):
+    model = MovieRendering
+    extra = 0
+
+
 class MovieAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -123,6 +215,9 @@ class MovieAdmin(admin.ModelAdmin):
     readonly_fields = (
         'tags_display',
         'image_count',
+    )
+    inlines = (
+        MovieRenderingInline,
     )
 
 
@@ -136,7 +231,9 @@ class MovieRenderingAdmin(admin.ModelAdmin):
 
     def render_action(self, request, queryset):
         for obj in queryset:
-            obj.render()
+            tasks.render_movie(
+                movie_rendering_id='{}'.format(obj.id)
+            )
 
     def preview_html(self, obj):
         return '''<img src="{}" />'''.format(obj.file.url)

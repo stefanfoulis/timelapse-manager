@@ -30,6 +30,8 @@ def discover_images_on_day(
             continue
         size_basedir = os.path.join(camera_basedir, size_name)
         day_basedir = os.path.join(size_basedir, day_name)
+        if not storage.exists(day_basedir):  # TODO: does this work on s3?
+            continue
         for imagename in storage.listdir(day_basedir)[1]:
             if not imagename.lower().endswith('.jpg'):
                 continue
@@ -53,9 +55,9 @@ def discover_images_on_day(
             defaults=imgdata,
         )
         if created:
-            print(' ==> created {} {}'.format(size_name, imagename))
+            print(' ==> created {} {}'.format(size_name, imgdata['name']))
         else:
-            print(' ==> updated {} {}'.format(size_name, imagename))
+            print(' ==> updated {} {}'.format(size_name, imgdata['name']))
 
 
 def discover_images(storage=storage.timelapse_storage, basedir='', limit_cameras=None, limit_days=None, sizes=None):
@@ -139,7 +141,6 @@ def create_or_update_image_from_url(url):
     else:
         print(' ==> updated {} {}'.format(size_name, filename))
     return image, created
-
 
 
 def create_thumbnail(image, size):

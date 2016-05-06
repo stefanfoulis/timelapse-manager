@@ -1,22 +1,64 @@
-web:
- build: .
- links:
-  - "db:postgres"
- ports:
-  - "49893:80"
- volumes:
-  - ".:/app:rw"
-  - "./data:/data:rw"
-  # - "../_input:/data/media/timelapse:rw"
-  - "/Volumes/Timelapse/images:/data/media/timelapse-images:rw"
- command: python manage.py runserver 0.0.0.0:80
- env_file: .env-local
- environment:
-  VIRTUAL_HOST: timelapse-manager.aldryn.me
+version: "2"
 
-db:
- image: postgres:9.4
- volumes:
-  - ".:/app:rw"
- environment:
-  POSTGRES_DB: db
+services:
+  baseimg:
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    image: stefanfoulis/weiherstrasse-base-test:py3-0.3
+    command: bash
+    volumes:
+      - ".:/app:rw"
+      - "./data:/data:rw"
+
+  base:
+    build: .
+    command: bash
+    volumes:
+      - ".:/app:rw"
+      - "./data:/data:rw"
+      - "/Volumes/Timelapse/images:/data/media/timelapse-images:rw"
+    env_file: .env-local
+    entrypoint: ["/tini", "--", ]
+
+  web:
+    extends: base
+#    image: timelapsemanager_base
+    ports:
+      - "49893:80"
+    command: python manage.py runserver 0.0.0.0:80
+    environment:
+      VIRTUAL_HOST: timelapse-manager.aldryn.me
+
+  worker:
+    extends: base
+#    image: timelapsemanager_base
+    command: aldryn-celery worker
+
+  beat:
+    extends: base
+#    image: timelapsemanager_base
+    command: aldryn-celery beat
+
+  cam:
+    extends: base
+#    image: timelapsemanager_base
+    command: aldryn-celery cam
+
+  db:
+    image: postgres:9.4
+    volumes:
+      - ".:/app:rw"
+    environment:
+      POSTGRES_DB: db
+
+  rabbitmq:
+    image: rabbitmq:3.5-management
+    hostname: rabbitmq
+    ports:
+      - "35672:15672"
+    expose:
+      - "15672"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "secret cookie here"
+      VIRTUAL_HOST: "radio-ch-rabbitmq.aldryn.me"
