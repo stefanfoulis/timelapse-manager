@@ -13,3 +13,15 @@ def datetime_from_filename(filename):
         timestr = ''
     datetimestr = '{} {}'.format(datestr, timestr)
     return dateparser.parse(datetimestr)
+
+
+def original_filename_from_filename(filename):
+    # old format: 2016-05-03_00-02-59_A_G0070289.JPG
+    # new format: 2016-05-03_00-02-59.A_G0070289.original.6c227c09a043c0e30a86a61ddd445734.JPG
+
+    # remove the date and time
+    filename = filename[20:]
+    # remove '.' seperated stuff in the middle (size and checksum with new format)
+    split = filename.split('.')
+    filename = '{}.{}'.format(split[0], split[-1])
+    return filename

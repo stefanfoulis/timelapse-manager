@@ -8,7 +8,7 @@ web:
   - ".:/app:rw"
   - "./data:/data:rw"
   # - "../_input:/data/media/timelapse:rw"
-  - "/Volumes/Timelapse:/data/media/timelapse:rw"
+  - "/Volumes/Timelapse/images:/data/media/timelapse-images:rw"
  command: python manage.py runserver 0.0.0.0:80
  env_file: .env-local
  environment:

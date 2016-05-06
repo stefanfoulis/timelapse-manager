@@ -35,9 +35,16 @@ class ImageQuerysetClip(VideoClip):
         print('has {} images'.format(qs.count()))
 
     def make_frame(self, t):
+        """
+        t is a numpy.Float64 representing how many seconds into the video we
+        are.
+        :param t:
+        :return:
+        """
         image = self.sequence.next()
         image_file = image.get_file_for_size(size='{}x{}'.format(*self.size))
-        print('making frame t={} with {}'.format(t, image_file.name))
+        print('making frame t={} ({})) with {}'.format(
+            t, type(t), image_file.name))
         return imread(uri=image_file)[:,:,:3]
 
 

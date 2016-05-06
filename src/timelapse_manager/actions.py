@@ -3,48 +3,89 @@ from __future__ import unicode_literals, absolute_import
 
 import datetime
 
+import collections
 import os
-from django.core.files.storage import default_storage
 from django.core.files import File
 
-from timelapse_manager.models import Image
-from . import models, utils
+from . import models
+from . import storage
+from . import utils
 import easy_thumbnails.files
 
 
-def discover_images(storage=default_storage, daydir_prefix=None):
+def discover_images_on_day(
+    camera,
+    day_name,
+    sizes=None,
+    storage=storage.timelapse_storage,
+    basedir='',
+):
+    sizes = sizes or ('original', '640x480', '320x240', '160x120')
+    data = collections.defaultdict(dict)
+    camera_basedir = os.path.join(basedir, camera.name)
+    for size_name in storage.listdir(camera_basedir)[0]:
+        if size_name not in sizes:
+            continue
+        size_basedir = os.path.join(camera_basedir, size_name)
+        day_basedir = os.path.join(size_basedir, day_name)
+        for imagename in storage.listdir(day_basedir)[1]:
+            if not imagename.lower().endswith('.jpg'):
+                continue
+            shot_at = utils.datetime_from_filename(imagename)
+            imgdata = data[(camera.name, shot_at)]
+            original_filename = utils.original_filename_from_filename(imagename)
+            imagepath = os.path.join(day_basedir, imagename)
+
+            imgdata['shot_at'] = shot_at
+            imgdata['name'] = original_filename
+
+            if size_name == 'original':
+                imgdata['original'] = imagepath
+            else:
+                imgdata['scaled_at_{}'.format(size_name)] = imagepath
+            print(' -> discovered {}'.format(imagepath))
+    for imgdata in data.values():
+        image, created = models.Image.objects.update_or_create(
+            camera=camera,
+            shot_at=imgdata.pop('shot_at'),
+            defaults=imgdata,
+        )
+        if created:
+            print(' ==> created {} {}'.format(size_name, imagename))
+        else:
+            print(' ==> updated {} {}'.format(size_name, imagename))
+
+
+def discover_images(storage=storage.timelapse_storage, basedir='', limit_cameras=None, limit_days=None, sizes=None):
     """
     directory relative to default storage root
     """
-    basedir = 'timelapse/overview'
-    sizes = ('original', '640x480', '320x240', '160x120')
-    camera = models.Camera.objects.all().first()
-    for size in sizes:
-        size_basedir = '/'.join([basedir, size])
-        for daydir in storage.listdir(size_basedir)[0]:
-            if daydir_prefix and not daydir.startswith(daydir_prefix):
+    sizes = sizes or ('original', '640x480', '320x240', '160x120')
+    for camera_name in storage.listdir(basedir)[0]:
+        if limit_cameras and camera_name not in limit_cameras:
+            continue
+        try:
+            camera = models.Camera.objects.get(name=camera_name)
+        except models.Camera.DoesNotExist:
+            continue
+        camera_basedir = os.path.join(basedir, camera_name)
+        days = set()
+        for size_name in storage.listdir(camera_basedir)[0]:
+            if size_name not in sizes:
                 continue
-            for imagename in storage.listdir('{}/{}'.format(size_basedir, daydir))[1]:
-                if not imagename.lower().endswith('.jpg'):
+            size_basedir = os.path.join(camera_basedir, size_name)
+            for day_name in storage.listdir(size_basedir)[0]:
+                if limit_days and not day_name in limit_days:
                     continue
-                shot_at = utils.datetime_from_filename(imagename)
-                imagepath = '/'.join([size_basedir, daydir, imagename])
-                defaults = {
-                    'shot_at': shot_at,
-                }
-                if size == 'original':
-                    defaults['original'] = imagepath
-                else:
-                    defaults['scaled_at_{}'.format(size)] = imagepath
-                image, created = models.Image.objects.update_or_create(
-                    camera=camera,
-                    name=imagename,
-                    defaults=defaults,
-                )
-                if created:
-                    print('first size found {} {}'.format(size, imagename))
-                else:
-                    print('discovered. possibly new. {} {}'.format(size, imagename))
+                days.add(day_name)
+        for day_name in days:
+            discover_images_on_day(
+                camera=camera,
+                day_name=day_name,
+                sizes=sizes,
+                storage=storage,
+                basedir=basedir,
+            )
 
 
 def create_thumbnail(image, size):
@@ -72,7 +113,7 @@ def create_thumbnails(image, force=False):
 
 
 def set_keyframes_for_day(day):
-    day.cover = Image.objects.pick_closest(
+    day.cover = models.Image.objects.pick_closest(
         camera=day.camera,
         shot_at=datetime.datetime.combine(day.date, datetime.time(16, 0)),
         max_difference=datetime.timedelta(hours=2)
@@ -87,7 +128,7 @@ def set_keyframes_for_day(day):
     ]
     images = []
     for keyframe in keyframes:
-        image = Image.objects.pick_closest(
+        image = models.Image.objects.pick_closest(
             camera=day.camera,
             shot_at=datetime.datetime.combine(day.date, keyframe),
             max_difference=datetime.timedelta(hours=1)
@@ -98,7 +139,7 @@ def set_keyframes_for_day(day):
 
 
 def image_count_by_type():
-    qs = Image.objects.all()
+    qs = models.Image.objects.all()
     data = {
         '160x120': qs.exclude(scaled_at_160x120='').count(),
         '320x240': qs.exclude(scaled_at_320x240='').count(),
