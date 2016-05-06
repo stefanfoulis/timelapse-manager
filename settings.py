@@ -7,8 +7,6 @@ INSTALLED_ADDONS = [
     'aldryn-django',
     'aldryn-sso',
     'aldryn-django-cms',
-    'aldryn-devsync',
-    'aldryn-celery',
     # </INSTALLED_ADDONS>
 ]
 
