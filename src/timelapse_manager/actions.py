@@ -102,10 +102,11 @@ def normalize_image_url(url):
             url = url[len(bucket):]
         if url.startswith(timelapse_storage.location):
             url = url[len(timelapse_storage.location):]
-        return url
     if url.startswith(timelapse_storage.base_url):
-        return url[len(timelapse_storage.base_url):]
-    return None
+        url = url[len(timelapse_storage.base_url):]
+    if url.startswith('/'):
+        url = url[1:]
+    return url
 
 
 def create_or_update_image_from_url(url):
