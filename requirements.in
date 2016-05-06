@@ -2,7 +2,7 @@
 https://control.aldryn.com/api/v1/apps/serve/aldryn-addons/1.0.0/78253c99-f090-4d6d-8356-fd0474227855/aldryn-addons-1.0.0.tar.gz#egg=aldryn-addons==1.0.0
 https://control.aldryn.com/api/v1/apps/serve/aldryn-django/1.9.3.2/f9d1473f-5a38-4f51-8fd1-5dbc1e3a0925/aldryn-django-1.9.3.2.tar.gz#egg=aldryn-django==1.9.3.2
 https://control.aldryn.com/api/v1/apps/serve/aldryn-sso/1.0.9/786f15c0-917f-4c9f-9433-f558e3f1271f/aldryn-sso-1.0.9.tar.gz#egg=aldryn-sso==1.0.9
-https://control.aldryn.com/api/v1/apps/serve/aldryn-django-cms/3.2.3.0/c968f4fa-0de6-4f62-9147-a35f68002b42/aldryn-django-cms-3.2.3.0.tar.gz#egg=aldryn-django-cms==3.2.3.0
+https://control.aldryn.com/api/v1/apps/serve/aldryn-django-cms/3.2.5.2/07b6a12f-2245-4994-84fc-fd44af21b112/aldryn-django-cms-3.2.5.2.tar.gz#egg=aldryn-django-cms==3.2.5.2
 # </INSTALLED_ADDONS>
 
 ipython

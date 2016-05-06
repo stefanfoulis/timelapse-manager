@@ -8,6 +8,12 @@ SYSTEM_FIELD_WARNING = 'WARNING: this field is auto-written. Please do not chang
 
 
 class Form(forms.BaseForm):
+    unescaped_render_model_tags = forms.CheckboxField(
+        'Leave "render_model" tags unescaped? (security risk)',
+        required=False,
+        initial=True,
+        help_text='IMPORTANT: Please review your project templates before un-checking this box. See: http://www.django-cms.org/en/blog/2016/04/26/security-updates-django-cms-released/.',  # noqa
+    )
     permissions_enabled = forms.CheckboxField(
         'Enable permission checks',
         required=False,
@@ -30,6 +36,7 @@ class Form(forms.BaseForm):
         from functools import partial
         from django.core.urlresolvers import reverse_lazy
         from aldryn_addons.utils import boolean_ish, djsenv
+        from aldryn_django import storage
 
         env = partial(djsenv, settings=settings)
 
@@ -235,6 +242,16 @@ class Form(forms.BaseForm):
         )
         settings['THUMBNAIL_CACHE_DIMENSIONS'] = True
 
+        # easy_thumbnails uses django's default storage backend (local file
+        # system storage) by default, even if the DEFAULT_FILE_STORAGE setting
+        # points to something else.
+        # If the DEFAULT_FILE_STORAGE has been set to a value known by
+        # aldryn-django, then use that as THUMBNAIL_DEFAULT_STORAGE as well.
+        for storage_backend in storage.SCHEMES.itervalues():
+            if storage_backend == settings['DEFAULT_FILE_STORAGE']:
+                settings['THUMBNAIL_DEFAULT_STORAGE'] = storage_backend
+                break
+
         # commented out because fix-tree has a major bug
         # this should be ok with CMS >=3.1.4
         # settings['MIGRATION_COMMANDS'].append(
@@ -301,4 +318,8 @@ class Form(forms.BaseForm):
             # this is an internal django-cms url
             # which gets called when a user logs out from toolbar
             settings['ALDRYN_SSO_LOGIN_WHITE_LIST'].append(reverse_lazy('admin:cms_page_resolve'))
+
+        # This may need to be removed in a future release.
+        settings['CMS_UNESCAPED_RENDER_MODEL_TAGS'] = data['unescaped_render_model_tags']
+
         return settings
