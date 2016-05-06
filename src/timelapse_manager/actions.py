@@ -102,7 +102,7 @@ def normalize_image_url(url):
             url = url[len(bucket):]
         if url.startswith(timelapse_storage.location):
             url = url[len(timelapse_storage.location):]
-    if url.startswith(timelapse_storage.base_url):
+    if hasattr(timelapse_storage, 'base_url') and url.startswith(timelapse_storage.base_url):
         url = url[len(timelapse_storage.base_url):]
     if url.startswith('/'):
         url = url[1:]
