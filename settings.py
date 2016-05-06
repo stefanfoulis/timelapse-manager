@@ -21,6 +21,8 @@ INSTALLED_APPS.extend([
     # add you project specific apps here
     'timelapse_manager',
     'taggit',
+    'rest_framework',
+    'rest_framework.authtoken',
 ])
 
 THUMBNAIL_OPTIMIZE_COMMAND = {
@@ -45,3 +47,24 @@ if TIMELAPSE_STORAGE_DSN:
     )
 else:
     TIMELAPSE_FILE_STORAGE = 'timelapse_manager.storage.FileSystemTimelapseStorage'
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.DjangoModelPermissions',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        # 'bucket:retrieve': '2/day',
+        # 'bucket:list': {
+        #     'burst': '1/second',
+        #     'sustained': '5/hour',
+        # },
+    },
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'PAGE_SIZE': 100,
+}

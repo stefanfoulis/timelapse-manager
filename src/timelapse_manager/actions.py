@@ -6,7 +6,9 @@ import datetime
 import collections
 import os
 from django.core.files import File
+from yurl import URL
 
+from timelapse_manager.storage import timelapse_storage
 from . import models
 from . import storage
 from . import utils
@@ -86,6 +88,51 @@ def discover_images(storage=storage.timelapse_storage, basedir='', limit_cameras
                 storage=storage,
                 basedir=basedir,
             )
+
+
+def normalize_image_url(url):
+    """
+    takes an s3 url or relative url and returns the part that is saved in the
+    database (relative to the storage root).
+    """
+    if url.startswith('http://') or url.startswith('https://'):
+        url = URL(url).path
+    if url.startswith(timelapse_storage.base_url):
+        return url[len(timelapse_storage.base_url):]
+    return None
+
+
+def create_or_update_image_from_url(url):
+    """
+    takes an s3 url or relative url:
+    - detects the size and other meta data
+    - creates or updates the Image model with the new file
+    """
+    path = normalize_image_url(url)
+    camera_name, size_name, day_name, filename = path.split('/')
+    camera = models.Camera.objects.get(name=camera_name)
+    shot_at = utils.datetime_from_filename(filename)
+
+    defaults = dict(
+        name=utils.original_filename_from_filename(filename),
+    )
+
+    if size_name == 'original':
+        defaults['original'] = path
+    else:
+        defaults['scaled_at_{}'.format(size_name)] = path
+
+    image, created = models.Image.objects.update_or_create(
+        camera=camera,
+        shot_at=shot_at,
+        defaults=defaults,
+    )
+    if created:
+        print(' ==> created {} {}'.format(size_name, filename))
+    else:
+        print(' ==> updated {} {}'.format(size_name, filename))
+    return image, created
+
 
 
 def create_thumbnail(image, size):

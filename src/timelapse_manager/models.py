@@ -62,12 +62,9 @@ class ImageManager(ChainableManager):
             qs = qs.filter(shot_at__lte=shot_at+max_difference)
         return qs.first()
 
-    def update_from_url(self, url):
-        """
-        takes an s3 url or relative url:
-        - detects the size and other meta data
-        - creates or updates the Image model with the new file
-        """
+    def create_or_update_from_url(self, url):
+        from . import actions
+        return actions.create_or_update_image_from_url(url)
 
 
 
