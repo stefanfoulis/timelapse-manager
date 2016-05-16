@@ -1,7 +1,6 @@
 # <INSTALLED_ADDONS enabled=False>  # Warning: text inside the INSTALLED_ADDONS tags is auto-generated. Manual changes will be overwritten.
 https://control.aldryn.com/api/v1/apps/serve/aldryn-addons/1.0.1/d34e1806-23c6-457e-839c-d0ab1d9c6846/aldryn-addons-1.0.1.tar.gz
 https://control.aldryn.com/api/v1/apps/serve/aldryn-django/1.9.6.0/d0d2fc42-e5db-434c-890c-13438b13d55c/aldryn-django-1.9.6.0.tar.gz
-# https://control.aldryn.com/api/v1/apps/serve/aldryn-sso/1.0.11/7715430d-c657-4a2d-b677-89f104ca6a2c/aldryn-sso-1.0.11.tar.gz#egg=aldryn-sso==1.0.11
 https://control.aldryn.com/api/v1/apps/serve/aldryn-django-cms/3.2.5.4/4440082c-4f72-47e7-9952-9114a3c23615/aldryn-django-cms-3.2.5.4.tar.gz
 https://control.aldryn.com/api/v1/apps/serve/aldryn-celery/0.4/3ecdb83c-9f5f-499f-99a6-cba160d79bac/aldryn-celery-0.4.tar.gz#egg=aldryn-celery==0.4
 # </INSTALLED_ADDONS>
