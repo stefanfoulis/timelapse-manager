@@ -18,6 +18,7 @@ class Form(forms.BaseForm):
         'Enable permission checks',
         required=False,
         initial=True,
+        help_text="When set, provides new fields in each page's settings to assign levels of access to particular users.",
     )
     cms_templates = forms.CharField(
         'CMS Templates',
@@ -247,7 +248,7 @@ class Form(forms.BaseForm):
         # points to something else.
         # If the DEFAULT_FILE_STORAGE has been set to a value known by
         # aldryn-django, then use that as THUMBNAIL_DEFAULT_STORAGE as well.
-        for storage_backend in storage.SCHEMES.itervalues():
+        for storage_backend in storage.SCHEMES.values():
             if storage_backend == settings['DEFAULT_FILE_STORAGE']:
                 settings['THUMBNAIL_DEFAULT_STORAGE'] = storage_backend
                 break
