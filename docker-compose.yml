@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.base
-    image: stefanfoulis/timelapse-manager:base-0.4
+    image: stefanfoulis/timelapse-manager:base-0.5
     command: bash
     volumes:
       - ".:/app:rw"
@@ -13,6 +13,7 @@ services:
 
   base:
     build: .
+    image: timelapsemanager_base
     command: bash
     volumes:
       - ".:/app:rw"
@@ -23,7 +24,8 @@ services:
 
   web:
     extends: base
-#    image: timelapsemanager_base
+    image: timelapsemanager_base
+    build: ""
     ports:
       - "49893:80"
     command: python manage.py runserver 0.0.0.0:80
@@ -32,17 +34,20 @@ services:
 
   worker:
     extends: base
-#    image: timelapsemanager_base
+    image: timelapsemanager_base
+    build: ""
     command: aldryn-celery worker
 
   beat:
     extends: base
-#    image: timelapsemanager_base
+    image: timelapsemanager_base
+    build: ""
     command: aldryn-celery beat
 
   cam:
     extends: base
-#    image: timelapsemanager_base
+    image: timelapsemanager_base
+    build: ""
     command: aldryn-celery cam
 
   db:

@@ -1,4 +1,4 @@
-FROM stefanfoulis/timelapse-manager:base-0.4
+FROM stefanfoulis/timelapse-manager:base-0.5
 
 # add full sourcecode
 # -------------------
