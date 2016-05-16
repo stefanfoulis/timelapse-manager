@@ -1,4 +1,4 @@
-FROM stefanfoulis/weiherstrasse-base-test:py3-0.3
+FROM stefanfoulis/timelapse-manager:base-0.4
 
 # add full sourcecode
 # -------------------
