@@ -8,12 +8,12 @@
 --extra-index-url https://devpi.divio.ch/aldryn/extras/+simple/
 --extra-index-url https://devpi.divio.ch/aldryn/extras/+simple/
 
-https://control.aldryn.com/api/v1/apps/serve/aldryn-addons/1.0.1/d34e1806-23c6-457e-839c-d0ab1d9c6846/aldryn-addons-1.0.1.tar.gz
+https://control.aldryn.com/api/v1/apps/serve/aldryn-addons/1.0.1/d34e1806-23c6-457e-839c-d0ab1d9c6846/aldryn-addons-1.0.1.tar.gz#egg=aldryn-addons==1.0.1
 aldryn-boilerplates==0.7.4
 https://control.aldryn.com/api/v1/apps/serve/aldryn-celery/0.4/3ecdb83c-9f5f-499f-99a6-cba160d79bac/aldryn-celery-0.4.tar.gz#egg=aldryn-celery==0.4
 aldryn-client==2.2.2
-https://control.aldryn.com/api/v1/apps/serve/aldryn-django-cms/3.2.5.4/4440082c-4f72-47e7-9952-9114a3c23615/aldryn-django-cms-3.2.5.4.tar.gz
-https://control.aldryn.com/api/v1/apps/serve/aldryn-django/1.9.6.0/d0d2fc42-e5db-434c-890c-13438b13d55c/aldryn-django-1.9.6.0.tar.gz
+https://control.aldryn.com/api/v1/apps/serve/aldryn-django-cms/3.2.5.4/4440082c-4f72-47e7-9952-9114a3c23615/aldryn-django-cms-3.2.5.4.tar.gz#egg=aldryn-django-cms==3.2.5.4
+https://control.aldryn.com/api/v1/apps/serve/aldryn-django/1.9.6.0/d0d2fc42-e5db-434c-890c-13438b13d55c/aldryn-django-1.9.6.0.tar.gz#egg=aldryn-django==1.9.6.0
 aldryn-sites==0.5.3
 aldryn-snake==0.0.2
 amqp==1.4.9               # via kombu
@@ -60,7 +60,7 @@ django-simple-captcha==0.5.1
 django-storages-redux==1.3.2
 django-taggit==0.18.3
 django-treebeard==4.0.1   # via django-cms
-django==1.9.6             # via aldryn-boilerplates, aldryn-sites, cmsplugin-filer, django-chainable-manager, django-classy-tags, django-cms, django-filer, django-formtools, django-graphiql, django-mptt, django-reversion, django-simple-captcha, django-treebeard, easy-thumbnails, graphene, graphql-django-view
+Django==1.9.6
 djangocms-admin-style==1.1.1  # via django-cms
 djangocms-googlemap==0.4.0
 djangocms-link==1.7.2
@@ -93,12 +93,12 @@ opbeat==3.3.1
 parsedatetime==2.1        # via recurrent
 pexpect==4.0.1            # via ipython
 pickleshare==0.7.2        # via ipython
-pillow==3.2.0             # via django-simple-captcha, djangocms-text-ckeditor, easy-thumbnails
+Pillow==3.2.0
 psycopg2==2.6.1
 ptyprocess==0.5.1         # via pexpect
 pyasn1==0.1.9             # via cryptography
 pycparser==2.14           # via cffi
-pyOpenSSL==16.0.0
+PyOpenSSL==16.0.0
 pypromise==0.4            # via graphql-core, graphql-relay
 python-dateutil==2.5.3    # via dateparser
 pytz==2016.4              # via celery, dateparser
