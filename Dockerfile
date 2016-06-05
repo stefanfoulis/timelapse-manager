@@ -1,4 +1,4 @@
-FROM stefanfoulis/timelapse-manager:base-0.5
+FROM stefanfoulis/timelapse-manager:base-py2-0.6
 
 # add full sourcecode
 # -------------------

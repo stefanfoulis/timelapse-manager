@@ -30,9 +30,15 @@ def discover_images_on_day(
             continue
         size_basedir = os.path.join(camera_basedir, size_name)
         day_basedir = os.path.join(size_basedir, day_name)
-        if not storage.exists(day_basedir):  # TODO: does this work on s3?
+        try:
+            imagenames = storage.listdir(day_basedir)[1]
+        except OSError:
+            # the local filesystem storage fails when trying to list a directory
+            # that does not exist. S3 storage just returns an empty list.
+            # unfortunatly storage.exists() does not work on S3, as it returns
+            # False for directories.
             continue
-        for imagename in storage.listdir(day_basedir)[1]:
+        for imagename in imagenames:
             if not imagename.lower().endswith('.jpg'):
                 continue
             shot_at = utils.datetime_from_filename(imagename)
@@ -78,7 +84,15 @@ def discover_images(storage=storage.timelapse_storage, basedir='', limit_cameras
             if size_name not in sizes:
                 continue
             size_basedir = os.path.join(camera_basedir, size_name)
-            for day_name in storage.listdir(size_basedir)[0]:
+            try:
+                day_names = storage.listdir(size_basedir)[0]
+            except OSError:
+                # the local filesystem storage fails when trying to list a
+                # directory that does not exist. S3 storage just returns an
+                # empty list. unfortunatly storage.exists() does not work on
+                # S3, as it returns False for directories.
+                day_names = []
+            for day_name in day_names:
                 if limit_days and not day_name in limit_days:
                     continue
                 days.add(day_name)

@@ -4,18 +4,14 @@
 #
 #    pip-compile requirements.in
 #
---index-url https://wheels.aldryn.net/d/pypi/aldryn-baseproject-py3/
---extra-index-url https://devpi.divio.ch/aldryn/extras/+simple/
+--index-url https://wheels.aldryn.net/d/pypi/aldryn-baseproject/
 --extra-index-url https://devpi.divio.ch/aldryn/extras/+simple/
 
 https://control.aldryn.com/api/v1/apps/serve/aldryn-addons/1.0.1/d34e1806-23c6-457e-839c-d0ab1d9c6846/aldryn-addons-1.0.1.tar.gz#egg=aldryn-addons==1.0.1
-aldryn-boilerplates==0.7.4
 https://control.aldryn.com/api/v1/apps/serve/aldryn-celery/0.4/3ecdb83c-9f5f-499f-99a6-cba160d79bac/aldryn-celery-0.4.tar.gz#egg=aldryn-celery==0.4
-aldryn-client==2.2.2
-https://control.aldryn.com/api/v1/apps/serve/aldryn-django-cms/3.2.5.4/4440082c-4f72-47e7-9952-9114a3c23615/aldryn-django-cms-3.2.5.4.tar.gz#egg=aldryn-django-cms==3.2.5.4
+aldryn-client==2.2.4
 https://control.aldryn.com/api/v1/apps/serve/aldryn-django/1.9.6.0/d0d2fc42-e5db-434c-890c-13438b13d55c/aldryn-django-1.9.6.0.tar.gz#egg=aldryn-django==1.9.6.0
 aldryn-sites==0.5.3
-aldryn-snake==0.0.2
 amqp==1.4.9               # via kombu
 anyjson==0.3.3            # via kombu
 argparse==1.4.0           # via djeese-fs
@@ -27,56 +23,40 @@ certifi==2016.2.28        # via djeese-fs
 cffi==1.6.0               # via cryptography
 chardet==2.3.0            # via djeese-fs
 click==6.6                # via aldryn-client
-cmsplugin-filer==1.0.1
-cryptography==1.3.2       # via pyopenssl
+contextlib2==0.5.3        # via raven
+cryptography==1.4         # via pyopenssl
 dateparser==0.3.5
 decorator==4.0.9          # via ipython, moviepy, traitlets
 dj-database-url==0.4.1
-dj-email-url==0.0.6
+dj-email-url==0.0.7
 dj-redis-url==0.1.4
 dj-static==0.0.6
-django-appconf==1.0.2     # via aldryn-boilerplates, aldryn-sites, cmsplugin-filer, django-compressor
+django-appconf==1.0.2     # via aldryn-sites
 django-cache-url==1.0.0
 django-celery==3.1.17
 django-chainable-manager==0.5.0
-django-classy-tags==0.7.2  # via django-cms, django-sekizai
-django-cms==3.2.5         # via cmsplugin-filer, djangocms-text-ckeditor
-django-compressor==2.0
 django-crispy-forms==1.6.0
 django-extended-choices==1.0.7
-django-filer==1.2.0       # via cmsplugin-filer
 django-filter==0.13.0
-django-formtools==1.0.0.1  # via django-cms
 django-getenv==1.3.1
 django-graphiql==0.4.4
-django-mptt==0.8.4        # via django-filer
-django-parler==1.6.3
-django-polymorphic==0.8.1  # via django-filer
 django-reversion==1.10.2
-django-robots==2.0
-django-sekizai==0.9.0     # via cmsplugin-filer, django-cms
-django-select2==4.3.2     # via djangocms-link
-django-simple-captcha==0.5.1
 django-storages-redux==1.3.2
-django-taggit==0.18.3
-django-treebeard==4.0.1   # via django-cms
+django-taggit==0.19.1
+django-treebeard==4.0.1
 Django==1.9.6
-djangocms-admin-style==1.1.1  # via django-cms
-djangocms-googlemap==0.4.0
-djangocms-link==1.7.2
-djangocms-snippet==1.8.1
-djangocms-text-ckeditor==2.9.3
 djangorestframework==3.3.3
 djeese-fs==0.1.21
-easy-thumbnails==2.2.1.1  # via cmsplugin-filer, django-filer
+easy-thumbnails==2.2.1.1
+enum34==1.1.6             # via cryptography
 future==0.15.2            # via django-extended-choices
-graphene[django]==0.9.1
-graphql-core==0.5         # via graphene, graphql-django-view, graphql-relay
+graphene[django]==0.10.2
+graphql-core==0.5.2       # via graphene, graphql-django-view, graphql-relay
 graphql-django-view==1.3  # via graphene
-graphql-relay==0.4.1      # via graphene
-html5lib==0.9999999       # via django-cms, djangocms-text-ckeditor
+graphql-relay==0.4.2      # via graphene
 idna==2.1                 # via cryptography
 imageio==1.5              # via moviepy
+ipaddress==1.0.16         # via cryptography
 ipdb==0.10.0
 ipython-genutils==0.1.0   # via traitlets
 ipython==4.2.0
@@ -84,45 +64,43 @@ iso8601==0.1.11           # via graphene
 itsdangerous==0.24        # via webservices
 jdatetime==1.8.1          # via dateparser
 kombu==3.0.35             # via celery
-lxml==3.6.0
 markdown==2.6.6
 moviepy==0.2.2.11
 ndg-httpsclient==0.4.0
 numpy==1.11.0             # via moviepy
-opbeat==3.3.1
+opbeat==3.3.2
 parsedatetime==2.1        # via recurrent
-pexpect==4.0.1            # via ipython
+pathlib2==2.1.0           # via pickleshare
+pexpect==4.1.0            # via ipython
 pickleshare==0.7.2        # via ipython
-Pillow==3.2.0
+pillow==3.2.0             # via easy-thumbnails
+promise==0.4.1            # via graphql-core, graphql-relay
 psycopg2==2.6.1
 ptyprocess==0.5.1         # via pexpect
 pyasn1==0.1.9             # via cryptography
 pycparser==2.14           # via cffi
 PyOpenSSL==16.0.0
-pypromise==0.4            # via graphql-core, graphql-relay
 python-dateutil==2.5.3    # via dateparser
 pytz==2016.4              # via celery, dateparser
 PyYAML==3.11
-raven==5.17.0
-rcssmin==1.0.6            # via django-compressor
+raven==5.19.0
 recurrent==0.2.4
-regex==2016.5.15          # via dateparser
+regex==2016.6.5           # via dateparser
 requests==2.10.0          # via aldryn-client
-rjsmin==1.0.12            # via django-compressor
 simplegeneric==0.8.1      # via ipython
 singledispatch==3.4.0.3   # via graphene
-six==1.10.0               # via aldryn-client, cryptography, django-simple-captcha, djangocms-snippet, graphene, graphql-core, html5lib, pyopenssl, python-dateutil, singledispatch, structlog
+six==1.10.0               # via aldryn-client, cryptography, graphene, graphql-core, pathlib2, pyopenssl, python-dateutil, singledispatch, structlog
 static3==0.7.0            # via dj-static
-structlog==16.0.0
+structlog==16.1.0
+subprocess32==3.2.7
 tabulate==0.7.5           # via aldryn-client
-tqdm==4.7.0               # via moviepy
+tqdm==4.7.4               # via moviepy
 traitlets==4.2.1          # via ipython
 umalqurra==0.2            # via dateparser
-Unidecode==0.4.19
 uwsgi==2.0.13.1
 webservices==0.7
 YURL==0.13
 
 # The following packages are commented out because they are
 # considered to be unsafe in a requirements file:
-# setuptools                # via cryptography, django-polymorphic, django-simple-captcha, ipdb, ipython
+# setuptools                # via cryptography, ipdb, ipython

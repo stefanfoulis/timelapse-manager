@@ -1,9 +1,17 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, absolute_import
+
+from celery.utils.log import get_task_logger
 from celery import shared_task
 from . import actions, models
 
 
+logger = get_task_logger(__name__)
+
+
 @shared_task
 def discover_images(camera_id):
+    logger.info('discover images for camera_id={}'.format(camera_id))
     camera = models.Camera.objects.get(id=camera_id)
     camera.discover_images()
 
@@ -14,6 +22,7 @@ def discover_images_on_day(
     set_keyframes=True,
     create_keyframe_thumbnails=True,
 ):
+    logger.info('discover images on day day_id={}'.format(day_id))
     day = models.Day.objects.get(id=day_id)
     day.discover_images()
     if set_keyframes:
@@ -27,13 +36,15 @@ def create_keyframe_thumbnails_on_day(
     day_id,
     create_thumbnails=False,
 ):
+    logger.info('create_keyframe_thumbnails_on_day day_id={}'.format(day_id))
     day = models.Day.objects.get(id=day_id)
-    day.create_keyframe_thumbnails()
+    day.set_key_frames()
     if create_thumbnails:
         day.create_keyframe_thumbnails()
 
 
 @shared_task
 def render_movie(movie_rendering_id):
+    logger.info('render_movie movie_rendering_id={}'.format(movie_rendering_id))
     movie_rendering = models.MovieRendering.objects.get(id=movie_rendering_id)
     movie_rendering.render()

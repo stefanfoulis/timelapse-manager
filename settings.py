@@ -5,7 +5,6 @@ INSTALLED_ADDONS = [
     # <INSTALLED_ADDONS>  # Warning: text inside the INSTALLED_ADDONS tags is auto-generated. Manual changes will be overwritten.
     'aldryn-addons',
     'aldryn-django',
-    'aldryn-django-cms',
     'aldryn-celery',
     # </INSTALLED_ADDONS>
 ]
@@ -21,6 +20,7 @@ INSTALLED_APPS.extend([
     'taggit',
     'rest_framework',
     'rest_framework.authtoken',
+    'easy_thumbnails',
 ])
 
 THUMBNAIL_OPTIMIZE_COMMAND = {
@@ -66,3 +66,17 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'PAGE_SIZE': 100,
 }
+
+
+from aldryn_django import storage
+for storage_backend in storage.SCHEMES.values():
+    if storage_backend == DEFAULT_FILE_STORAGE:
+        THUMBNAIL_DEFAULT_STORAGE = storage_backend
+        break
+
+LOGGING['loggers']['celery'] = {
+    'handlers': ['console'],
+    'level': 'DEBUG',
+}
+from logging.config import dictConfig
+dictConfig(LOGGING)
