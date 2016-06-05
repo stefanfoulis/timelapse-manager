@@ -66,4 +66,5 @@ services:
       - "15672"
     environment:
       RABBITMQ_ERLANG_COOKIE: "secret cookie here"
-      VIRTUAL_HOST: "radio-ch-rabbitmq.aldryn.me"
+      VIRTUAL_HOST: "timelapse-manager-rabbitmq.aldryn.me"
+      VIRTUAL_PORT: 15672
