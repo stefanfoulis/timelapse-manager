@@ -61,9 +61,9 @@ def discover_images_on_day(
             defaults=imgdata,
         )
         if created:
-            print(' ==> created {} {}'.format(size_name, imgdata['name']))
+            print(' ==> created {}'.format(imgdata['name']))
         else:
-            print(' ==> updated {} {}'.format(size_name, imgdata['name']))
+            print(' ==> updated {}'.format(imgdata['name']))
 
 
 def discover_images(storage=storage.timelapse_storage, basedir='', limit_cameras=None, limit_days=None, sizes=None):
@@ -125,16 +125,80 @@ def normalize_image_url(url):
     return url
 
 
+def image_url_to_structured_data(url):
+    path = normalize_image_url(url)
+    camera_name, size_name, day_name, filename = path.split('/')
+    shot_at = utils.datetime_from_filename(filename)
+    return dict(
+        url=url,
+        path=path,
+        camera_name=camera_name,
+        size_name=size_name,
+        day_name=day_name,
+        filename=filename,
+        shot_at=shot_at,
+        original_filename=utils.original_filename_from_filename(filename),
+    )
+
+
+def create_or_update_images_from_urls(urls):
+    """
+    Takes a list of urls and creates or updates matching Images in the database.
+    This function is smart about only making one db query if multiple urls of
+    the same image are provided.
+    """
+    data = collections.defaultdict(dict)
+    for url in urls:
+        img = image_url_to_structured_data(url)
+        img_data = data[(img['camera_name'], img['shot_at'])]
+        img_data['camera_name'] = img['camera_name']
+        img_data['shot_at'] = img['shot_at']
+        img_data['name'] = img['original_filename']
+        if img['size_name'] == 'original':
+            img_data['original'] = img['path']
+        else:
+            img_data['scaled_at_{}'.format(img['size_name'])] = img['path']
+    cameras = {}
+    images = []
+    for img_data in data.values():
+        camera_name = img_data.pop('camera_name')
+        shot_at = img_data.pop('shot_at')
+        if camera_name not in cameras:
+            cameras[camera_name] = models.Camera.objects.get(
+                name=camera_name,
+            )
+        image, created = models.Image.objects.update_or_create(
+            camera=cameras[camera_name],
+            shot_at=shot_at,
+            defaults=img_data,
+        )
+        images.append(image)
+        if created:
+            print(' ==> created {} {}'.format(
+                ', '.join(img_data.keys()),
+                img_data['name']),
+            )
+        else:
+            print(' ==> updated {} {}'.format(
+                ', '.join(img_data.keys()),
+                img_data['name']),
+            )
+    return images
+
+
 def create_or_update_image_from_url(url):
     """
     takes an s3 url or relative url:
     - detects the size and other meta data
     - creates or updates the Image model with the new file
     """
-    path = normalize_image_url(url)
-    camera_name, size_name, day_name, filename = path.split('/')
+    img = image_url_to_structured_data(url)
+    camera_name = img['camera_name']
+    filename = img['filename']
+    size_name = img['size_name']
+    path = img['path']
+    shot_at = img['shot_at']
     camera = models.Camera.objects.get(name=camera_name)
-    shot_at = utils.datetime_from_filename(filename)
 
     defaults = dict(
         name=utils.original_filename_from_filename(filename),

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals, absolute_import
 from rest_framework import response, routers, serializers, viewsets, views, mixins
-
 from . import models
 
 
@@ -21,8 +21,8 @@ class ImageViewSet(viewsets.ModelViewSet):
     serializer_class = ImageSerializer
 
 
-class ImageIntakeSerializer(serializers.Serializer):
-    image_url = serializers.CharField(max_length=255, write_only=True)
+class ImageUrlSerializer(serializers.Serializer):
+    image_url = serializers.CharField(max_length=1024, write_only=True)
 
     def create(self, validated_data):
         image, created = models.Image.objects.create_or_update_from_url(validated_data['image_url'])
@@ -31,4 +31,19 @@ class ImageIntakeSerializer(serializers.Serializer):
 
 class ImageIntakeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = models.Image.objects.none()
-    serializer_class = ImageIntakeSerializer
+    serializer_class = ImageUrlSerializer
+
+
+class ImageUrlsSerializer(serializers.Serializer):
+    images = ImageUrlSerializer(many=True)
+
+    def create(self, validated_data):
+        images = models.Image.objects.create_or_update_images_from_urls(
+            urls=[img['image_url'] for img in validated_data['images']],
+        )
+        return {'images': []}
+
+
+class ImagesIntakeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = models.Image.objects.none()
+    serializer_class = ImageUrlsSerializer

@@ -80,7 +80,11 @@ class ImageManager(ChainableManager):
 
     def create_or_update_from_url(self, url):
         from . import actions
-        return actions.create_or_update_image_from_url(url)
+        return actions.create_or_update_image_from_url(url=url)
+
+    def create_or_update_images_from_urls(self, urls):
+        from . import actions
+        return actions.create_or_update_images_from_urls(urls=urls)
 
 
 

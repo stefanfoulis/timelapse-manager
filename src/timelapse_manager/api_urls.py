@@ -9,6 +9,7 @@ from . import api
 router = routers.DefaultRouter()
 router.register('images', api.ImageViewSet)
 router.register('image-intake', api.ImageIntakeViewSet, base_name='')
+router.register('images-intake', api.ImagesIntakeViewSet, base_name='')
 
 
 urlpatterns = [
