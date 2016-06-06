@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.base
-    image: stefanfoulis/timelapse-manager:base-py2-0.6
+    image: stefanfoulis/timelapse-manager:base-py3-0.6
     command: bash
     volumes:
       - ".:/app:rw"
