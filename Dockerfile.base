@@ -30,3 +30,6 @@ ENV PIP_INDEX_URL=https://wheels.aldryn.net/d/pypi/aldryn-baseproject-py3/\
     PIP_RETRIES=12
 COPY requirements.txt /app/
 RUN pip install --no-deps -r requirements.txt
+RUN python -c "from imageio.plugins import avbin; avbin.get_avbin_lib()"
+RUN python -c "from imageio.plugins import _freeimage; _freeimage.get_freeimage_lib()"
+RUN python -c "from imageio.plugins import ffmpeg; ffmpeg.get_exe()"
