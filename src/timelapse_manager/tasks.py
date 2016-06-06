@@ -32,7 +32,7 @@ def discover_images_on_day(
 
 
 @shared_task
-def create_keyframe_thumbnails_on_day(
+def set_keyframes_on_day(
     day_id,
     create_thumbnails=False,
 ):
@@ -41,6 +41,15 @@ def create_keyframe_thumbnails_on_day(
     day.set_key_frames()
     if create_thumbnails:
         day.create_keyframe_thumbnails()
+
+
+@shared_task
+def create_keyframe_thumbnails_on_day(
+    day_id,
+):
+    logger.info('create_keyframe_thumbnails_on_day day_id={}'.format(day_id))
+    day = models.Day.objects.get(id=day_id)
+    day.create_keyframe_thumbnails()
 
 
 @shared_task

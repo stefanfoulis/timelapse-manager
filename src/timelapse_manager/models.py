@@ -13,7 +13,6 @@ from chainablemanager.manager import ChainableManager
 from easy_thumbnails.fields import ThumbnailerImageField
 
 from . import storage
-import djcelery
 
 
 class UUIDAuditedModel(models.Model):
@@ -66,6 +65,16 @@ class ImageManager(ChainableManager):
             for img in self.with_missing_thumbnails(camera=camera).iterator():
                 img.create_thumbnails()
 
+        def with_faulty_scaled_filenames(self):
+            return self.filter(
+                Q(scaled_at_160x120__icontains='.original.') |
+                Q(scaled_at_160x120__icontains='.JPG.') |
+                Q(scaled_at_320x240__icontains='.original.') |
+                Q(scaled_at_320x240__icontains='.JPG.') |
+                Q(scaled_at_640x480__icontains='.original.') |
+                Q(scaled_at_640x480__icontains='.JPG.')
+            )
+
     def pick_closest(self, camera, shot_at, max_difference=None):
         """
         Picks closes available image. Raises DoesNotExists if no image is
@@ -87,7 +96,6 @@ class ImageManager(ChainableManager):
         return actions.create_or_update_images_from_urls(urls=urls)
 
 
-
 @python_2_unicode_compatible
 class Image(UUIDAuditedModel):
     sizes = (
@@ -95,25 +103,38 @@ class Image(UUIDAuditedModel):
         '320x240',
         '160x120',
     )
+    SIZE_CHOICES = [
+        (size, size)
+        for size in sizes
+    ]
     camera = models.ForeignKey(Camera, related_name='images')
-    name = models.CharField(max_length=255, blank=True, default='')
+    name = models.CharField(
+        max_length=255, blank=True, default='', db_index=True)
     shot_at = models.DateTimeField(
         null=True, blank=True, default=None, db_index=True)
     original = ThumbnailerImageField(
-        null=True, blank=True, default='', max_length=255,
+        null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage)
+    original_md5 = models.CharField(
+        max_length=32, blank=True, default='', db_index=True)
     scaled_at_160x120 = ThumbnailerImageField(
-        null=True, blank=True, default='', max_length=255,
+        null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage,
         upload_to=partial(storage.upload_to_thumbnail, size='160x120'))
+    scaled_at_160x120_md5 = models.CharField(
+        max_length=32, blank=True, default='', db_index=True)
     scaled_at_320x240 = ThumbnailerImageField(
-        null=True, blank=True, default='', max_length=255,
+        null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage,
         upload_to=partial(storage.upload_to_thumbnail, size='320x240'))
+    scaled_at_320x240_md5 = models.CharField(
+        max_length=32, blank=True, default='', db_index=True)
     scaled_at_640x480 = ThumbnailerImageField(
-        null=True, blank=True, default='', max_length=255,
+        null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage,
         upload_to=partial(storage.upload_to_thumbnail, size='640x480'))
+    scaled_at_640x480_md5 = models.CharField(
+        max_length=32, blank=True, default='', db_index=True)
 
     objects = ImageManager()
 
@@ -304,7 +325,12 @@ class Movie(UUIDAuditedModel):
 @python_2_unicode_compatible
 class MovieRendering(UUIDAuditedModel):
     movie = models.ForeignKey(Movie, related_name='renderings')
+    size = models.CharField(
+        max_length=32, choices=[(imgsize, imgsize) for imgsize in Image.sizes],
+        default='160x120',
+    )
     fps = models.FloatField(default=15.0)
+    duration = models.FloatField(null=True, blank=True, default=None)
     format = models.CharField(default='mp4', max_length=255)
     file = models.FileField(blank=True, default='', max_length=255)
 

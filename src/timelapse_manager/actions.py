@@ -4,11 +4,11 @@ from __future__ import unicode_literals, absolute_import
 import datetime
 
 import collections
+
+import hashlib
 import os
 from django.core.files import File
-from yurl import URL
 
-from timelapse_manager.storage import timelapse_storage
 from . import models
 from . import storage
 from . import utils
@@ -43,16 +43,17 @@ def discover_images_on_day(
                 continue
             shot_at = utils.datetime_from_filename(imagename)
             imgdata = data[(camera.name, shot_at)]
-            original_filename = utils.original_filename_from_filename(imagename)
             imagepath = os.path.join(day_basedir, imagename)
 
             imgdata['shot_at'] = shot_at
-            imgdata['name'] = original_filename
+            imgdata['name'] = utils.original_filename_from_filename(imagename)
 
             if size_name == 'original':
                 imgdata['original'] = imagepath
+                imgdata['original_md5'] = utils.md5sum_from_filename(imagename)
             else:
                 imgdata['scaled_at_{}'.format(size_name)] = imagepath
+                imgdata['scaled_at_{}_md5'.format(size_name)] = utils.md5sum_from_filename(imagename)
             print(' -> discovered {}'.format(imagepath))
     for imgdata in data.values():
         image, created = models.Image.objects.update_or_create(
@@ -106,41 +107,6 @@ def discover_images(storage=storage.timelapse_storage, basedir='', limit_cameras
             )
 
 
-def normalize_image_url(url):
-    """
-    takes an s3 url or relative url and returns the part that is saved in the
-    database (relative to the storage root).
-    """
-    if url.startswith('http://') or url.startswith('https://'):
-        url = URL(url).path
-        bucket = '/{}/'.format(timelapse_storage.bucket_name)
-        if url.startswith(bucket):
-            url = url[len(bucket):]
-        if url.startswith(timelapse_storage.location):
-            url = url[len(timelapse_storage.location):]
-    if hasattr(timelapse_storage, 'base_url') and url.startswith(timelapse_storage.base_url):
-        url = url[len(timelapse_storage.base_url):]
-    if url.startswith('/'):
-        url = url[1:]
-    return url
-
-
-def image_url_to_structured_data(url):
-    path = normalize_image_url(url)
-    camera_name, size_name, day_name, filename = path.split('/')
-    shot_at = utils.datetime_from_filename(filename)
-    return dict(
-        url=url,
-        path=path,
-        camera_name=camera_name,
-        size_name=size_name,
-        day_name=day_name,
-        filename=filename,
-        shot_at=shot_at,
-        original_filename=utils.original_filename_from_filename(filename),
-    )
-
-
 def create_or_update_images_from_urls(urls):
     """
     Takes a list of urls and creates or updates matching Images in the database.
@@ -149,15 +115,17 @@ def create_or_update_images_from_urls(urls):
     """
     data = collections.defaultdict(dict)
     for url in urls:
-        img = image_url_to_structured_data(url)
+        img = utils.image_url_to_structured_data(url)
         img_data = data[(img['camera_name'], img['shot_at'])]
         img_data['camera_name'] = img['camera_name']
         img_data['shot_at'] = img['shot_at']
-        img_data['name'] = img['original_filename']
+        img_data['name'] = img['name']
         if img['size_name'] == 'original':
             img_data['original'] = img['path']
+            img_data['original_md5'] = img['md5']
         else:
             img_data['scaled_at_{}'.format(img['size_name'])] = img['path']
+            img_data['scaled_at_{}_md5'.format(img['size_name'])] = img['md5']
     cameras = {}
     images = []
     for img_data in data.values():
@@ -192,7 +160,7 @@ def create_or_update_image_from_url(url):
     - detects the size and other meta data
     - creates or updates the Image model with the new file
     """
-    img = image_url_to_structured_data(url)
+    img = utils.image_url_to_structured_data(url)
     camera_name = img['camera_name']
     filename = img['filename']
     size_name = img['size_name']
@@ -206,8 +174,11 @@ def create_or_update_image_from_url(url):
 
     if size_name == 'original':
         defaults['original'] = path
+        defaults['original_md5'] = img['md5']
     else:
         defaults['scaled_at_{}'.format(size_name)] = path
+        defaults['scaled_at_{}_md5'.format(img['size_name'])] = img['md5']
+
 
     image, created = models.Image.objects.update_or_create(
         camera=camera,
@@ -233,7 +204,11 @@ def create_thumbnail(image, size):
     thumb = thumbnailer.generate_thumbnail(options)
     content_file = thumb.file
     content_file.name = 'afile.jpg'
+    content_file.seek(0)
+    md5sum = hashlib.md5(content_file.read()).hexdigest()
+    content_file.seek(0)
     setattr(image, 'scaled_at_{}'.format(size), content_file)
+    setattr(image, 'scaled_at_{}_md5'.format(size), md5sum)
 
 
 def create_thumbnails(image, force=False):
@@ -284,8 +259,45 @@ def image_count_by_type():
 
 def render_movie(movie_rendering):
     from . import moviepy
-    moviepath = moviepy.render_video(movie_rendering.movie.images())
+    moviepath = moviepy.render_video(
+        queryset=movie_rendering.movie.images(),
+        size=movie_rendering.size,
+        format=movie_rendering.format,
+        duration=movie_rendering.duration,
+        fps=movie_rendering.fps,
+    )
     with open(moviepath, 'rb') as f:
         django_file = File(f)
-        movie_rendering.file.save(os.path.basename(moviepath), django_file, save=True)
+        movie_rendering.file.save(
+            os.path.basename(moviepath),
+            django_file,
+            save=True,
+        )
         movie_rendering.save()
+
+
+def delete_thumbnails(qs):
+    for image in qs.iterator():
+        print('handling {}'.format(image.name))
+        for size in image.sizes:
+            size_field_name = 'scaled_at_{}'.format(size)
+            size_field_md5_name = 'scaled_at_{}_md5'.format(size)
+            image_size = getattr(image, size_field_name)
+            if image_size:
+                print('  -> deleting {}'.format(image_size.url))
+                image_size.delete()
+                setattr(image, size_field_md5_name, '')
+        image.save()
+
+
+def set_image_name_based_on_original_filename(qs):
+    for image in qs:
+        if not image.original:
+            print('skipping {}. missing original'.format(image))
+        name = utils.image_url_to_structured_data(image.original.url)['name']
+        if name != image.name:
+            print('changing {} to {}'.format(image.name, name))
+            image.name = name
+            image.save()
+        else:
+            print('skipping {}. name already correct')

@@ -140,7 +140,7 @@ class DayAdmin(admin.ModelAdmin):
     def set_keyframes_and_create_keyframe_thumbnails_action(
             self, request, queryset):
         for day in queryset:
-            tasks.create_keyframe_thumbnails_on_day.delay(
+            tasks.set_keyframes_on_day.delay(
                 day_id=smart_text(day.id),
                 create_thumbnails=True,
             )

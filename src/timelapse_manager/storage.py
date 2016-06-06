@@ -3,7 +3,6 @@ import os
 
 from django.conf import settings
 from django.core.files.storage import get_storage_class, FileSystemStorage
-from django.utils._os import abspathu
 from django.utils.functional import LazyObject
 
 from six.moves.urllib import parse
@@ -156,12 +155,23 @@ def parse_storage_url(url, aws_setting_prefix='AWS_MEDIA_', djeese_setting_prefi
     return settings
 
 
+def structured_data_to_image_filename(data):
+    return '{shot_at}.{original_name}.{size}.{md5sum}.JPG'.format(**data)
+
+
 def upload_to_thumbnail(instance, filename, size=None):
+    from . import utils
     original_path = instance.original.name
     original_name = os.path.basename(original_path)
+    filename = '{shot_at}.{original_name}.{size}.{md5sum}.JPG'.format(
+        shot_at=utils.datetime_to_datetimestr(instance.shot_at),
+        original_name=instance.name,
+        size=size,
+        md5sum=getattr(instance, 'scaled_at_{}_md5'.format(size)),
+    )
     return '{camera}/{size}/{day}/{filename}'.format(
         size=size,
         day=original_name[:10],
-        filename=original_name,
+        filename=filename,
         camera=instance.camera.name,
     )
