@@ -25,7 +25,8 @@ class TimestampedImageSequenceClip(CompositeVideoClip):
 
 class ImageQuerysetClip(VideoClip):
     """
-    A VideoClip made from a series of images. Dommain specific to the timelapse-manager django app.
+    A VideoClip made from a series of images. Dommain specific to the
+    timelapse-manager django app.
     Inspired by moviepy.editor.ImageSequenceClip
     """
     def __init__(self, qs, size, duration):
