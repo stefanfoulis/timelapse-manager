@@ -68,7 +68,7 @@ def normalize_image_url(url):
 def image_url_to_structured_data(url):
     path = normalize_image_url(url)
     camera_name, size_name, day_name, filename = path.split('/')
-    md5sum = md5sum_from_filename(filename=filename)
+    md5 = md5sum_from_filename(filename=filename)
     shot_at = datetime_from_filename(filename)
     name = original_filename_from_filename(filename)
     return dict(
@@ -80,7 +80,7 @@ def image_url_to_structured_data(url):
         filename=filename,
         shot_at=shot_at,
         name=name,
-        md5sum=md5sum,
+        md5=md5,
     )
 
 
