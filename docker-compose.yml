@@ -19,7 +19,9 @@ services:
       - ".:/app:rw"
       - "./data:/data:rw"
       - "/Volumes/Timelapse/images:/data/media/timelapse-images:rw"
-    env_file: .env-local
+    env_file:
+      - ".env-local"
+      - ".env-local-secrets"
     entrypoint: ["/tini", "--", ]
 
   web:
