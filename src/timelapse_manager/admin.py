@@ -208,8 +208,16 @@ class MovieRenderingInline(admin.TabularInline):
     model = MovieRendering
     extra = 0
     readonly_fields = (
+        'frame_count',
+        'expected_frame_count',
         'admin_link',
     )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(frame_count=models.Count('frames'))
+
+    def frame_count(self, obj):
+        return obj.frame_count
 
     def admin_link(self, obj):
         return '<a target="_blank" href="{}">edit</a>'.format(

@@ -179,10 +179,12 @@ def upload_to_thumbnail(instance, filename, size=None):
 
 
 def upload_to_movie_rendering(instance, filename):
-    filename = '{name}.{size}.{md5sum}.JPG'.format(
+    extension = os.path.splitext(filename)[1][1:]
+    filename = '{name}.{size}.{md5sum}.{extension}'.format(
         name=slugify(instance.movie.name),
         size=instance.size,
         md5sum=instance.file_md5,
+        extension=extension,
     )
     return 'movies/{camera}/{size}/{filename}'.format(
         size=instance.size,

@@ -274,6 +274,8 @@ def create_frames_for_movie_rendering(movie_rendering):
 
 def render_movie(movie_rendering):
     from . import moviepy
+    if not movie_rendering.frames.all().exists():
+        movie_rendering.create_frames()
     moviepath = moviepy.render_video(
         queryset=movie_rendering.frames.all().select_related('image'),
         size=movie_rendering.size,
