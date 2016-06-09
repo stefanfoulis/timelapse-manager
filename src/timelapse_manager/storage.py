@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from django.core.files.storage import get_storage_class, FileSystemStorage
 from django.utils.functional import LazyObject
+from django.utils.text import slugify
 
 from six.moves.urllib import parse
 from storages.backends import s3boto
@@ -174,4 +175,17 @@ def upload_to_thumbnail(instance, filename, size=None):
         day=original_name[:10],
         filename=filename,
         camera=instance.camera.name,
+    )
+
+
+def upload_to_movie_rendering(instance, filename):
+    filename = '{name}.{size}.{md5sum}.JPG'.format(
+        name=slugify(instance.movie.name),
+        size=instance.size,
+        md5sum=instance.file_md5,
+    )
+    return 'movies/{camera}/{size}/{filename}'.format(
+        size=instance.size,
+        filename=filename,
+        camera=instance.movie.camera.name,
     )

@@ -3,9 +3,12 @@ from __future__ import unicode_literals, absolute_import
 
 import datetime
 from django.contrib import admin, messages
+from django.core.urlresolvers import reverse
+from django.db import models
 from django.utils.encoding import smart_text
 
-from .models import Camera, Image, Day, Tag, TagInfo, Movie, MovieRendering
+from .models import Camera, Image, Day, Tag, TagInfo, Movie, MovieRendering, \
+    Frame
 from . import tasks, utils
 
 
@@ -91,8 +94,8 @@ class ImageAdmin(admin.ModelAdmin):
     )
 
     def create_thumbnails_action(self, request, queryset):
-        for image in queryset:
-            image.create_thumbnails()
+        for obj in queryset:
+            tasks.create_thumbnails_for_image.delay(image_id=str(obj.id))
 
 
 class DayAdmin(admin.ModelAdmin):
@@ -204,6 +207,16 @@ class TagInfoAdmin(admin.ModelAdmin):
 class MovieRenderingInline(admin.TabularInline):
     model = MovieRendering
     extra = 0
+    readonly_fields = (
+        'admin_link',
+    )
+
+    def admin_link(self, obj):
+        return '<a target="_blank" href="{}">edit</a>'.format(
+            reverse('admin:timelapse_manager_movierendering_change', args=('{}'.format(obj.pk),))
+        )
+    admin_link.allow_tags = True
+    admin_link.short_description = ''
 
 
 class MovieAdmin(admin.ModelAdmin):
@@ -213,31 +226,114 @@ class MovieAdmin(admin.ModelAdmin):
         'image_count',
     )
     readonly_fields = (
-        'tags_display',
+        'tags_html',
+        'sequence_union_html',
+        'realtime_duration',
+        'movie_duration',
         'image_count',
     )
     inlines = (
         MovieRenderingInline,
     )
+    filter_horizontal = (
+        'tags',
+    )
+
+    def tags_html(self, obj):
+        return '<br/>'.join([
+            '{} -> {} {}'.format(tag.start_at, tag.end_at, tag.name)
+            for tag in obj.tag_instances()
+        ])
+    tags_html.allow_tags = True
+    tags_html.short_description = 'Tags'
+
+    def sequence_union_html(self, obj):
+        return '<br/>'.join([
+            '{} -> {}'.format(start_at, end_at)
+            for start_at, end_at in obj.sequence_union()
+        ])
+    sequence_union_html.allow_tags = True
+    sequence_union_html.short_description = 'Union'
 
 
 class MovieRenderingAdmin(admin.ModelAdmin):
     actions = (
+        'create_frames_action',
         'render_action',
     )
+    list_display = (
+        '__str__',
+        'size',
+        'frame_count',
+        'expected_frame_count',
+    )
     readonly_fields = (
+        'expected_frame_count',
+        'wanted_frame_timestamps_html',
         'preview_html',
     )
 
-    def render_action(self, request, queryset):
-        for obj in queryset:
-            tasks.render_movie(
-                movie_rendering_id='{}'.format(obj.id)
-            )
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(frame_count=models.Count('frames'))
+
+    def frame_count(self, obj):
+        return obj.frame_count
+
+    def wanted_frame_timestamps_html(self, obj):
+        timestamps = list(obj.wanted_frame_timestamps())
+        html_title = '<strong>{}</strong> frames<br/>'.format(len(timestamps))
+        html_ts = '<br/>'.join([
+            '{}'.format(timestamp)
+            for timestamp in obj.wanted_frame_timestamps()
+        ])
+        return html_title + html_ts
+    wanted_frame_timestamps_html.allow_tags = True
+    wanted_frame_timestamps_html.short_description = 'wanted frame timestamps'
 
     def preview_html(self, obj):
         return '''<img src="{}" />'''.format(obj.file.url)
     preview_html.allow_tags = True
+
+    def create_frames_action(self, request, queryset):
+        for obj in queryset:
+            obj.create_frames()
+
+    def render_action(self, request, queryset):
+        for obj in queryset:
+            tasks.render_movie.delay(
+                movie_rendering_id='{}'.format(obj.id)
+            )
+
+
+class FrameAdmin(admin.ModelAdmin):
+    list_filter = (
+        'movie_rendering',
+    )
+    list_display = (
+        'preview_html',
+        'movie_rendering',
+        'number',
+        'realtime_timestamp',
+    )
+    actions = (
+        'create_thumbnails_action',
+    )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('image')
+
+    def preview_html(self, obj):
+        if obj.image.scaled_at_160x120:
+            return '<img src="{}" />'.format(obj.image.scaled_at_160x120.url)
+        else:
+            return '<div style="width: 160px; height: 120px; border: 1px solid gray;"></div>'
+    preview_html.allow_tags = True
+
+    def create_thumbnails_action(self, request, queryset):
+        for obj in queryset:
+            tasks.create_thumbnails_for_image.delay(image_id=str(obj.image_id))
 
 
 admin.site.register(Camera, CameraAdmin)
@@ -247,3 +343,4 @@ admin.site.register(Tag, TagAdmin)
 admin.site.register(TagInfo, TagInfoAdmin)
 admin.site.register(Movie, MovieAdmin)
 admin.site.register(MovieRendering, MovieRenderingAdmin)
+admin.site.register(Frame, FrameAdmin)

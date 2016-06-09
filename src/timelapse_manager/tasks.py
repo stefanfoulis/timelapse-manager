@@ -57,3 +57,9 @@ def render_movie(movie_rendering_id):
     logger.info('render_movie movie_rendering_id={}'.format(movie_rendering_id))
     movie_rendering = models.MovieRendering.objects.get(id=movie_rendering_id)
     movie_rendering.render()
+
+
+@shared_task
+def create_thumbnails_for_image(image_id, force=False):
+    image = models.Image.objects.get(id=image_id)
+    image.create_thumbnails(force=force)

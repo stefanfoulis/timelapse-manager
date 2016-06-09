@@ -23,17 +23,22 @@ class TimestampedImageSequenceClip(CompositeVideoClip):
         super(TimestampedImageSequenceClip, self).__init__(self.clips)
 
 
-class ImageQuerysetClip(VideoClip):
+class FrameQuerysetClip(VideoClip):
     """
     A VideoClip made from a series of images. Dommain specific to the
     timelapse-manager django app.
     Inspired by moviepy.editor.ImageSequenceClip
     """
-    def __init__(self, qs, size, duration):
+    def __init__(self, qs, size, fps, duration):
         VideoClip.__init__(self, duration=duration)
-        self.sequence = qs.iterator()
-        self.size = size
-        print('has {} images'.format(qs.count()))
+        self.frames = {
+            frame.number: frame
+            for frame in qs
+        }
+        self.fps = fps
+        self.size = [int(value) for value in size.split('x')]
+        self.size_str = size
+        print('has {} frames'.format(qs.count()))
 
     def make_frame(self, t):
         """
@@ -42,15 +47,19 @@ class ImageQuerysetClip(VideoClip):
         :param t:
         :return:
         """
-        image = self.sequence.next()
-        image_file = image.get_file_for_size(size='{}x{}'.format(*self.size))
+        frame_number = int(t * self.fps)
+        frame = self.frames[frame_number]
+        image_file = frame.image.get_file_for_size(size=self.size_str)
+        if not image_file:
+            frame.image.create_thumbnails()
+        image_file = frame.image.get_file_for_size(size=self.size_str)
         print('making frame t={} ({})) with {}'.format(
             t, type(t), image_file.name))
-        return imread(uri=image_file)[:,:,:3]
+        return imread(uri=image_file)[:, :, :3]
 
 
-def render_video(queryset, size, format, duration, fps):
-    video = ImageQuerysetClip(queryset, size=size, duration=duration)
+def render_video(queryset, size, format, fps, duration):
+    video = FrameQuerysetClip(queryset, size=size, fps=fps, duration=duration)
     try:
         os.makedirs('/data/tmp')
     except:
@@ -59,9 +68,9 @@ def render_video(queryset, size, format, duration, fps):
     outfile = os.path.join(outdir, 'video.{}'.format(format))
     print('writing to outfile: {}'.format(outfile))
     if format == 'gif':
-        video.write_gif(outfile, fps=fps)
+        video.write_gif(outfile)
     else:
-        video.write_videofile(outfile, audio=False, fps=fps)
+        video.write_videofile(outfile, audio=False)
     # FIXME: must cleanup the temporary file at some point (after saving to
     #        django storage)
     return outfile

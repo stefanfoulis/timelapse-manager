@@ -9,6 +9,7 @@ import hashlib
 import os
 from django.core.files import File
 
+from timelapse_manager.models import Frame
 from . import models
 from . import storage
 from . import utils
@@ -257,22 +258,35 @@ def image_count_by_type():
     return '  '.join(['{}: {}'.format(key, value) for key, value in data.items()])
 
 
+def create_frames_for_movie_rendering(movie_rendering):
+    movie_rendering.frames.all().delete()
+    number = 0
+    for timestamp in movie_rendering.wanted_frame_timestamps():
+        frame = Frame(
+            movie_rendering=movie_rendering,
+            number=number,
+            realtime_timestamp=timestamp,
+        )
+        frame.pick_image()
+        frame.save()
+        number += 1
+
+
 def render_movie(movie_rendering):
     from . import moviepy
     moviepath = moviepy.render_video(
-        queryset=movie_rendering.movie.images(),
+        queryset=movie_rendering.frames.all().select_related('image'),
         size=movie_rendering.size,
         format=movie_rendering.format,
-        duration=movie_rendering.duration,
         fps=movie_rendering.fps,
+        duration=movie_rendering.movie.movie_duration().total_seconds(),
     )
     with open(moviepath, 'rb') as f:
+        md5sum = hashlib.md5(f.read()).hexdigest()
+        f.seek(0)
+        movie_rendering.file_md5 = md5sum
         django_file = File(f)
-        movie_rendering.file.save(
-            os.path.basename(moviepath),
-            django_file,
-            save=True,
-        )
+        movie_rendering.file = django_file
         movie_rendering.save()
 
 

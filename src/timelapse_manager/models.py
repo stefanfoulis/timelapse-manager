@@ -178,6 +178,15 @@ class Tag(UUIDAuditedModel):
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
 
+    class Meta:
+        ordering = (
+            'start_at',
+            'end_at',
+        )
+
+    def __str__(self):
+        return self.name
+
     def images(self):
         if not (self.start_at and self.end_at):
             return Image.objects.empty()
@@ -186,9 +195,6 @@ class Tag(UUIDAuditedModel):
             shot_at__gte=self.start_at,
             shot_at__lte=self.end_at,
         )
-
-    def __str__(self):
-        return self.name
 
     def tag_info(self):
         return TagInfo.objects.get_or_create(name=self.name)[0]
@@ -305,15 +311,49 @@ class Movie(UUIDAuditedModel):
         tag_names = self.tags.values_list('name', flat=True)
         return Tag.objects.filter(name__in=tag_names)
 
+    def sequence_union(self):
+        # adapted from http://stackoverflow.com/a/15273749/245810
+        ranges = self.tag_instances().values_list('start_at', 'end_at')
+        union = []
+        for begin, end in sorted(ranges):
+            # TODO: make sure not using ">= begin-1" is ok
+            if union and union[-1][1] >= begin:
+                union[-1] = (min(union[-1][0], begin), max(union[-1][1], end))
+            else:
+                union.append((begin, end))
+        return union
+
+    def realtime_duration(self):
+        duration = datetime.timedelta(0)
+        for start_at, end_at in self.sequence_union():
+            duration += end_at - start_at
+        return duration
+
+    def movie_duration(self):
+        return self.realtime_duration() / self.speed_factor
+
     def images(self):
+        union_ranges = self.sequence_union()
+        qs = Image.objects.filter(
+            camera=self.camera,
+        )
+        q = Q(name__isnull=True)  # it is always false
+        for start_at, end_at in union_ranges:
+            q = q | Q(
+                shot_at__gte=start_at,
+                shot_at__lte=end_at,
+            )
+        return qs.filter(q).distinct()
+
+    def tag_images(self):
+        # deprecated
         qs = Image.objects.filter(
             camera=self.camera,
         )
         q = Q(name__isnull=True)  # it is always false
         for tag in self.tag_instances():
             q = q | tag.get_q('shot_at')
-        qs = qs.filter(q)
-        return qs.distinct()
+        return qs.filter(q).distinct()
 
     def tags_display(self):
         return ', '.join(['{} ({} -> {})'.format(tag.name, tag.start_at, tag.end_at) for tag in self.tag_instances()])
@@ -330,13 +370,60 @@ class MovieRendering(UUIDAuditedModel):
         default='160x120',
     )
     fps = models.FloatField(default=15.0)
-    duration = models.FloatField(null=True, blank=True, default=None)
     format = models.CharField(default='mp4', max_length=255)
-    file = models.FileField(blank=True, default='', max_length=255)
+    file = models.FileField(
+        null=True, blank=True, default='', max_length=255, db_index=True,
+        storage=storage.timelapse_storage,
+        upload_to=storage.upload_to_movie_rendering,
+    )
+    file_md5 = models.CharField(
+        max_length=32, blank=True, default='', db_index=True)
 
     def __str__(self):
         return "{}: {} {}fps".format(self.movie, self.format, self.fps)
 
+    def expected_frame_count(self):
+        movie_duration = self.movie.movie_duration()
+        fps = self.fps
+        return movie_duration.total_seconds() * fps
+
+    def wanted_frame_timestamps(self):
+        for start_at, end_at in self.movie.sequence_union():
+            realtime_duration = (end_at - start_at).total_seconds()
+            target_duration = realtime_duration / self.movie.speed_factor
+            wanted_image_count = target_duration * self.fps
+            wanted_image_every_realtime_seconds = realtime_duration / wanted_image_count
+            current_timestamp = start_at
+            while current_timestamp <= end_at:
+                yield current_timestamp
+                current_timestamp += datetime.timedelta(
+                    seconds=wanted_image_every_realtime_seconds)
+
+    def create_frames(self):
+        from . import actions
+        return actions.create_frames_for_movie_rendering(movie_rendering=self)
+
     def render(self):
         from . import actions
-        actions.render_movie(movie_rendering=self)
+        return actions.render_movie(movie_rendering=self)
+
+
+class Frame(UUIDAuditedModel):
+    movie_rendering = models.ForeignKey(MovieRendering, related_name='frames')
+    number = models.PositiveIntegerField()
+    realtime_timestamp = models.DateTimeField()
+    image = models.ForeignKey(
+        Image, related_name='frames', null=True, blank=True)
+
+    class Meta:
+        ordering = (
+            'movie_rendering',
+            'number',
+        )
+
+    def pick_image(self):
+        self.image = Image.objects.pick_closest(
+            camera=self.movie_rendering.movie.camera,
+            shot_at=self.realtime_timestamp,
+            max_difference=datetime.timedelta(hours=1)
+        )
