@@ -103,7 +103,7 @@ class DayAdmin(admin.ModelAdmin):
         'date',
         'cover_img',
         'keyframes_img',
-        'image_count',
+        'image_counts_html',
     )
     actions = (
         'set_keyframes_action',
@@ -126,9 +126,11 @@ class DayAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'
 
     def get_queryset(self, request):
-        qs = super(DayAdmin, self).get_queryset(request)
-        qs = qs.select_related('cover')
-        qs = qs.prefetch_related('key_frames')
+        qs = (
+            super(DayAdmin, self).get_queryset(request)
+            .select_related('cover')
+            .prefetch_related('key_frames')
+        )
         return qs
 
     def set_keyframes_action(self, request, queryset):
@@ -184,6 +186,14 @@ class DayAdmin(admin.ModelAdmin):
             html_list.append(html)
         return "&nbsp;".join(html_list)
     keyframes_img.allow_tags = True
+
+    def image_counts_html(self, obj):
+        return '<br/>'.join([
+            '<em>{}</em>: {}'.format(key, value)
+            for key, value in sorted(obj.image_counts().items())
+        ])
+    image_counts_html.allow_tags = True
+    image_counts_html.short_description = 'image counts'
 
 
 class TagAdmin(admin.ModelAdmin):

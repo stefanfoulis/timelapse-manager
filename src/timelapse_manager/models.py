@@ -273,6 +273,14 @@ class Day(UUIDAuditedModel):
     def image_count(self):
         return self.images().count()
 
+    def image_counts(self):
+        return self.images().aggregate(
+            original=models.Count('original', distinct=True),
+            scaled_at_160x120=models.Count('scaled_at_160x120', distinct=True),
+            scaled_at_320x240=models.Count('scaled_at_320x240', distinct=True),
+            scaled_at_640x480=models.Count('scaled_at_640x480', distinct=True),
+        )
+
     def set_key_frames(self):
         from . import actions
         actions.set_keyframes_for_day(self)
