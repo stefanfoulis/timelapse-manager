@@ -169,10 +169,17 @@ class DayAdmin(admin.ModelAdmin):
         if not image:
             return ''
         if image.scaled_at_160x120:
-            return '<img src="{}" style="width: 160px; height: 120px" />'.format(
-                image.scaled_at_160x120.url)
+            img_html = '<img src="{img_src}" style="width: 160px; height: 120px" />'.format(
+                img_src=image.scaled_at_160x120.url,
+            )
         else:
-            return '<div style="display: inline-block; border: 1px dashed gray; width: 160px; height: 120px; text-align: center">thumbnail missing</div>'
+            img_html = '<div style="display: inline-block; border: 1px dashed gray; width: 160px; height: 120px; text-align: center">thumbnail missing</div>'
+        if image.original:
+            img_html = '<a href="{link}">{img_html}</a>'.format(
+                link=image.original.url,
+                img_html=img_html,
+            )
+        return img_html
     cover_img.allow_tags = True
 
     def keyframes_img(self, obj):
@@ -183,6 +190,11 @@ class DayAdmin(admin.ModelAdmin):
                     image.scaled_at_160x120.url)
             else:
                 html = '<div style="display: inline-block; border: 1px dashed gray; width: 160px; height: 120px; text-align: center">thumbnail missing</div>'
+            if image.original:
+                html = '<a href="{link}">{img_html}</a>'.format(
+                    link=image.original.url,
+                    img_html=html,
+                )
             html_list.append(html)
         return "&nbsp;".join(html_list)
     keyframes_img.allow_tags = True
