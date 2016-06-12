@@ -29,6 +29,7 @@ services:
     build: ""
     ports:
       - "49893:80"
+      - "3000:3000"
     command: python manage.py runserver 0.0.0.0:80
     environment:
       VIRTUAL_HOST: timelapse-manager.aldryn.me

@@ -39,7 +39,7 @@ RUN python -c "from imageio.plugins import avbin; avbin.get_avbin_lib()"
 RUN python -c "from imageio.plugins import _freeimage; _freeimage.get_freeimage_lib()"
 RUN python -c "from imageio.plugins import ffmpeg; ffmpeg.get_exe()"
 
-ENV PATH=/node_modules/.bin:$PATH
+#ENV PATH=/node_modules/.bin:$PATH
 #RUN npm install -g npm-install-retry
 #COPY package.json /app/package.json
 ##RUN (ln -s /app/package.json /package.json && cd / && npm-install-retry)
