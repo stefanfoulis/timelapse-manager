@@ -5,20 +5,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.base
-    image: stefanfoulis/timelapse-manager:base-py3-0.9
+    image: stefanfoulis/timelapse-manager:base-py3-1.0
     command: bash
-    volumes:
-      - ".:/app:rw"
-      - "./data:/data:rw"
 
   base:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: timelapsemanager_base
     command: bash
     volumes:
       - ".:/app:rw"
       - "./data:/data:rw"
-      - "/Volumes/Timelapse/images:/data/media/timelapse-images:rw"
+#      - "/Volumes/Timelapse/images:/data/media/timelapse-images:rw"
     env_file:
       - ".env-local"
       - ".env-local-secrets"

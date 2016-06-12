@@ -14,15 +14,15 @@ Thumbs.db
 *.pyo
 
 # Aldryn
-/.env
-/.env-local
+.env
+.env-local
 .aldryn
-/data
-/data.tar.gz
-/static_collected
-/node_modules
+data
+data.tar.gz
+static_collected
+node_modules
 # </DEFAULT>
-/celerybeat-schedule.*
+celerybeat-schedule.*
 docker-compose.override.yml
 .env-local-secrets
-/tmp
+tmp

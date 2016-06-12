@@ -22,3 +22,5 @@ django-crispy-forms
 django-graphiql
 graphene
 graphene[django]
+
+django-webpack-loader

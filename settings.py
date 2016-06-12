@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from getenv import env
 
 INSTALLED_ADDONS = [
@@ -81,3 +82,17 @@ LOGGING['loggers']['celery'] = {
 }
 from logging.config import dictConfig
 dictConfig(LOGGING)
+
+
+# react related stuff
+STATICFILES_DIRS.insert(
+    0,
+    os.path.join(BASE_DIR, 'assets')
+)
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'bundles/',
+        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json')
+    }
+}
+INSTALLED_APPS.append('webpack_loader')

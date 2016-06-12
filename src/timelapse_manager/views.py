@@ -12,3 +12,7 @@ class TimelapseHome(generic.ListView):
     def get_queryset(self):
         qs = super(TimelapseHome, self).get_queryset()
         return qs.order_by('-shot_at')[:5]
+
+
+class IndexView(generic.TemplateView):
+    template_name = 'index.html'
