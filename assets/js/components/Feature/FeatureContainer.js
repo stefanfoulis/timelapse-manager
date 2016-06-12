@@ -5,13 +5,14 @@ export default Relay.createContainer(Feature, {
   fragments: {
     viewer: () => Relay.QL`
       fragment on User {
-        features(first: 10) {
+        images(first: 10) {
           edges {
             node {
               id
               name
-              description
-              url
+              originalUrl
+              scaledAt160X120Url
+              shotAt
             }
           }
         }

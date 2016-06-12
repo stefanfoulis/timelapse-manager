@@ -10,27 +10,26 @@ export default class Feature extends React.Component {
   };
 
   render() {
-    return (<h1>Hello, Fucking, world.</h1>
-      // <Page heading='Integrated with'>
-      //   <Grid>
-      //     {this.props.viewer.features.edges.map(edge => {
-      //       const imageUrl = require(`../../assets/${edge.node.name.toLowerCase()}.png`);
-      //       return (
-      //         <Cell col={4} key={edge.node.id}>
-      //           <Card className={styles.card}>
-      //             <CardTitle expand className={styles.image} style={{ backgroundImage: `url(${imageUrl})` }} />
-      //             <CardActions className={styles.name}>
-      //               <Button colored href={edge.node.url}>{edge.node.name}</Button>
-      //             </CardActions>
-      //             <CardText className={styles.description}>
-      //               {edge.node.description}
-      //             </CardText>
-      //           </Card>
-      //         </Cell>
-      //       );
-      //     })}
-      //   </Grid>
-      // </Page>
+    return (
+      <Page heading='Images'>
+        <Grid>
+          {this.props.viewer.images.edges.map(edge => {
+            return (
+              <Cell col={4} key={edge.node.id}>
+                <Card className={styles.card}>
+                  <CardTitle expand className={styles.image} style={{ backgroundImage: `url(${edge.node.scaledAt160X120Url})` }} />
+                  <CardActions className={styles.name}>
+                    <Button colored href={edge.node.originalUrl}>{edge.node.name}</Button>
+                  </CardActions>
+                  <CardText className={styles.description}>
+                    {edge.node.shotAt}
+                  </CardText>
+                </Card>
+              </Cell>
+            );
+          })}
+        </Grid>
+      </Page>
     );
   }
 }

@@ -11,6 +11,14 @@ const rootNode = document.getElementById('react-app');
 // const rootNode = document.createElement('div');
 // document.body.appendChild(rootNode);
 
+
+Relay.injectNetworkLayer(
+  new Relay.DefaultNetworkLayer('http://timelapse-manager.aldryn.me/graphql', {
+    credentials: 'same-origin',
+  })
+);
+
+
 ReactDOM.render(
   <Router history={browserHistory} routes={Route} render={applyRouterMiddleware(useRelay)} environment={Relay.Store} />,
   rootNode
