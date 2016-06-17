@@ -26,3 +26,5 @@ celerybeat-schedule.*
 docker-compose.override.yml
 .env-local-secrets
 tmp
+
+webpack-stats.json
