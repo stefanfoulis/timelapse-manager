@@ -152,6 +152,7 @@ class Image(UUIDAuditedModel):
         actions.create_thumbnails(self, force=force)
         self.save()
 
+    @property
     def tags(self):
         return Tag.objects.filter(
             camera=self.camera,
@@ -187,6 +188,7 @@ class Tag(UUIDAuditedModel):
     def __str__(self):
         return self.name
 
+    @property
     def images(self):
         if not (self.start_at and self.end_at):
             return Image.objects.empty()
@@ -204,13 +206,15 @@ class Tag(UUIDAuditedModel):
         TagInfo.objects.get_or_create(name=self.name)
         return r
 
+    @property
     def duration(self):
         if not (self.start_at and self.end_at):
             return None
         return self.end_at - self.start_at
 
+    @property
     def image_count(self):
-        return self.images().count()
+        return self.images.count()
 
     def get_q(self, fieldname):
         return Q(**{
@@ -227,6 +231,7 @@ class TagInfo(UUIDAuditedModel):
     def __str__(self):
         return self.name
 
+    @property
     def tags(self):
         return Tag.objects.filter(name=self.name)
 
@@ -264,17 +269,19 @@ class Day(UUIDAuditedModel):
     def __str__(self):
         return '{}'.format(self.date)
 
+    @property
     def images(self):
         return Image.objects.filter(
             camera=self.camera,
             shot_at__date=self.date,
         )
 
+    @property
     def image_count(self):
-        return self.images().count()
+        return self.images.count()
 
     def image_counts(self):
-        return self.images().aggregate(
+        return self.images.aggregate(
             original=models.Count('original', distinct=True),
             scaled_at_160x120=models.Count('scaled_at_160x120', distinct=True),
             scaled_at_320x240=models.Count('scaled_at_320x240', distinct=True),
@@ -315,13 +322,15 @@ class Movie(UUIDAuditedModel):
     def __str__(self):
         return self.name
 
+    @property
     def tag_instances(self):
         tag_names = self.tags.values_list('name', flat=True)
         return Tag.objects.filter(name__in=tag_names)
 
+    @property
     def sequence_union(self):
         # adapted from http://stackoverflow.com/a/15273749/245810
-        ranges = self.tag_instances().values_list('start_at', 'end_at')
+        ranges = self.tag_instances.values_list('start_at', 'end_at')
         union = []
         for begin, end in sorted(ranges):
             # TODO: make sure not using ">= begin-1" is ok
@@ -331,17 +340,20 @@ class Movie(UUIDAuditedModel):
                 union.append((begin, end))
         return union
 
+    @property
     def realtime_duration(self):
         duration = datetime.timedelta(0)
-        for start_at, end_at in self.sequence_union():
+        for start_at, end_at in self.sequence_union:
             duration += end_at - start_at
         return duration
 
+    @property
     def movie_duration(self):
-        return self.realtime_duration() / self.speed_factor
+        return self.realtime_duration / self.speed_factor
 
+    @property
     def images(self):
-        union_ranges = self.sequence_union()
+        union_ranges = self.sequence_union
         qs = Image.objects.filter(
             camera=self.camera,
         )
@@ -353,21 +365,29 @@ class Movie(UUIDAuditedModel):
             )
         return qs.filter(q).distinct()
 
+    @property
     def tag_images(self):
         # deprecated
         qs = Image.objects.filter(
             camera=self.camera,
         )
         q = Q(name__isnull=True)  # it is always false
-        for tag in self.tag_instances():
+        for tag in self.tag_instances:
             q = q | tag.get_q('shot_at')
         return qs.filter(q).distinct()
 
+    @property
     def tags_display(self):
-        return ', '.join(['{} ({} -> {})'.format(tag.name, tag.start_at, tag.end_at) for tag in self.tag_instances()])
+        return ', '.join([
+             '{} ({} -> {})'.format(
+                 tag.name, tag.start_at, tag.end_at
+             )
+             for tag in self.tag_instances
+        ])
 
+    @property
     def image_count(self):
-        return self.images().count()
+        return self.images.count()
 
 
 @python_2_unicode_compatible
@@ -390,17 +410,20 @@ class MovieRendering(UUIDAuditedModel):
     def __str__(self):
         return "{}: {} {}fps".format(self.movie, self.format, self.fps)
 
+    @property
     def expected_frame_count(self):
-        movie_duration = self.movie.movie_duration()
+        movie_duration = self.movie.movie_duration
         fps = self.fps
         return movie_duration.total_seconds() * fps
 
+    @property
     def wanted_frame_timestamps(self):
-        for start_at, end_at in self.movie.sequence_union():
+        for start_at, end_at in self.movie.sequence_union:
             realtime_duration = (end_at - start_at).total_seconds()
             target_duration = realtime_duration / self.movie.speed_factor
             wanted_image_count = target_duration * self.fps
-            wanted_image_every_realtime_seconds = realtime_duration / wanted_image_count
+            wanted_image_every_realtime_seconds = (
+                realtime_duration / wanted_image_count)
             current_timestamp = start_at
             while current_timestamp <= end_at:
                 yield current_timestamp

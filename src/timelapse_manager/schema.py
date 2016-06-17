@@ -21,9 +21,23 @@ def get_url(instance, fieldname):
     return ''
 
 
+class Camera(DjangoNode):
+    class Meta:
+        model = models.Camera
+        filter_fields = {
+            'name': ['exact', 'icontains', 'istartswith'],
+        }
+
+
 class Image(DjangoNode):
     class Meta:
         model = models.Image
+        filter_fields = {
+            'name': ['exact', 'icontains', 'istartswith'],
+            'shot_at': ['exact', 'icontains', 'istartswith'],
+            'original': ['exact', 'icontains', 'istartswith'],
+            'original_md5': ['exact', 'icontains', 'istartswith'],
+        }
 
     original_url = graphene.StringField(source='original')
     scaled_at_160x120_url = graphene.StringField(source='scaled_at_160x120')
@@ -45,6 +59,17 @@ class Image(DjangoNode):
     @graphene.resolve_only_args
     def resolve_scaled_at_640x480_url(self):
         return get_url(self.instance, 'scaled_at_640x480')
+
+
+class Day(DjangoNode):
+    class Meta:
+        model = models.Day
+
+    images = DjangoFilterConnectionField(Image)
+
+    @graphene.with_context
+    def resolve_images(self, args, context, info):
+        return self.instance.images.all()
 
 
 class User(DjangoNode):
@@ -70,7 +95,13 @@ class User(DjangoNode):
 
 class Query(graphene.ObjectType):
     image = relay.NodeField(Image)
-    all_images = DjangoFilterConnectionField(Image)
+    all_images = DjangoFilterConnectionField(Camera)
+
+    camera = relay.NodeField(Image)
+    all_cameras = DjangoFilterConnectionField(Camera)
+
+    day = relay.NodeField(Day)
+    all_days = DjangoFilterConnectionField(Day)
 
     viewer = graphene.Field(User)
 

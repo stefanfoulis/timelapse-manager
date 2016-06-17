@@ -272,7 +272,7 @@ class MovieAdmin(admin.ModelAdmin):
     def tags_html(self, obj):
         return '<br/>'.join([
             '{} -> {} {}'.format(tag.start_at, tag.end_at, tag.name)
-            for tag in obj.tag_instances()
+            for tag in obj.tag_instances
         ])
     tags_html.allow_tags = True
     tags_html.short_description = 'Tags'
@@ -280,7 +280,7 @@ class MovieAdmin(admin.ModelAdmin):
     def sequence_union_html(self, obj):
         return '<br/>'.join([
             '{} -> {}'.format(start_at, end_at)
-            for start_at, end_at in obj.sequence_union()
+            for start_at, end_at in obj.sequence_union
         ])
     sequence_union_html.allow_tags = True
     sequence_union_html.short_description = 'Union'
@@ -311,11 +311,11 @@ class MovieRenderingAdmin(admin.ModelAdmin):
         return obj.frame_count
 
     def wanted_frame_timestamps_html(self, obj):
-        timestamps = list(obj.wanted_frame_timestamps())
+        timestamps = list(obj.wanted_frame_timestamps)
         html_title = '<strong>{}</strong> frames<br/>'.format(len(timestamps))
         html_ts = '<br/>'.join([
             '{}'.format(timestamp)
-            for timestamp in obj.wanted_frame_timestamps()
+            for timestamp in obj.wanted_frame_timestamps
         ])
         return html_title + html_ts
     wanted_frame_timestamps_html.allow_tags = True

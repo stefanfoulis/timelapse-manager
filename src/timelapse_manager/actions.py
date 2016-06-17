@@ -54,7 +54,8 @@ def discover_images_on_day(
                 imgdata['original_md5'] = utils.md5sum_from_filename(imagename)
             else:
                 imgdata['scaled_at_{}'.format(size_name)] = imagepath
-                imgdata['scaled_at_{}_md5'.format(size_name)] = utils.md5sum_from_filename(imagename)
+                imgdata['scaled_at_{}_md5'.format(size_name)] = (
+                    utils.md5sum_from_filename(imagename))
             print(' -> discovered {}'.format(imagepath))
     for imgdata in data.values():
         image, created = models.Image.objects.update_or_create(
@@ -68,7 +69,10 @@ def discover_images_on_day(
             print(' ==> updated {}'.format(imgdata['name']))
 
 
-def discover_images(storage=storage.timelapse_storage, basedir='', limit_cameras=None, limit_days=None, sizes=None):
+def discover_images(
+    storage=storage.timelapse_storage, basedir='',
+    limit_cameras=None, limit_days=None, sizes=None
+):
     """
     directory relative to default storage root
     """
@@ -180,7 +184,6 @@ def create_or_update_image_from_url(url):
         defaults['scaled_at_{}'.format(size_name)] = path
         defaults['scaled_at_{}_md5'.format(img['size_name'])] = img['md5']
 
-
     image, created = models.Image.objects.update_or_create(
         camera=camera,
         shot_at=shot_at,
@@ -255,13 +258,16 @@ def image_count_by_type():
         '640x480': qs.exclude(scaled_at_640x480='').count(),
         'original': qs.exclude(original='').count(),
     }
-    return '  '.join(['{}: {}'.format(key, value) for key, value in data.items()])
+    return '  '.join([
+         '{}: {}'.format(key, value)
+         for key, value in data.items()
+    ])
 
 
 def create_frames_for_movie_rendering(movie_rendering):
     movie_rendering.frames.all().delete()
     number = 0
-    for timestamp in movie_rendering.wanted_frame_timestamps():
+    for timestamp in movie_rendering.wanted_frame_timestamps:
         frame = Frame(
             movie_rendering=movie_rendering,
             number=number,
@@ -281,7 +287,7 @@ def render_movie(movie_rendering):
         size=movie_rendering.size,
         format=movie_rendering.format,
         fps=movie_rendering.fps,
-        duration=movie_rendering.movie.movie_duration().total_seconds(),
+        duration=movie_rendering.movie.movie_duration.total_seconds(),
     )
     with open(moviepath, 'rb') as f:
         md5sum = hashlib.md5(f.read()).hexdigest()
