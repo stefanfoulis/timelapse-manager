@@ -28,6 +28,11 @@ class UUIDAuditedModel(models.Model):
 class Camera(UUIDAuditedModel):
     name = models.CharField(blank=True, default='', max_length=255)
     notes = models.TextField(blank=True, default='')
+    auto_resize_original = models.BooleanField(
+        default=False,
+        help_text='if enabled, every original image submitted through the image'
+                  'intake will automatically be resized.'
+    )
 
     def __str__(self):
         return self.name

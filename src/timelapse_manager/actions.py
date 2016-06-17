@@ -156,6 +156,9 @@ def create_or_update_images_from_urls(urls):
                 ', '.join(img_data.keys()),
                 img_data['name']),
             )
+        if cameras[camera_name].auto_resize_original:
+            from .tasks import create_thumbnails_for_image
+            create_thumbnails_for_image.delay(image_id=image.id)
     return images
 
 
