@@ -8,14 +8,14 @@ var BundleTracker = require('webpack-bundle-tracker');
 module.exports = {
   context: __dirname,
   entry: [
-    'webpack-dev-server/client?http://localhost:3000',
+    'webpack-dev-server/client?http://timelapse-manager.aldryn.me:3000',
     'webpack/hot/only-dev-server',
     './assets/js/index',
   ],
   output: {
       path: path.resolve('./assets/bundles/'),
       filename: "[name]-[hash].js",
-      publicPath: 'http://localhost:3000/assets/bundles/', // Tell django to use this URL to load packages and not use STATIC_URL + bundle_name
+      publicPath: 'http://timelapse-manager.aldryn.me:3000/assets/bundles/', // Tell django to use this URL to load packages and not use STATIC_URL + bundle_name
   },
 
   plugins: [
