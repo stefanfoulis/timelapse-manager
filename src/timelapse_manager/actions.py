@@ -133,9 +133,11 @@ def create_or_update_images_from_urls(urls):
             img_data['scaled_at_{}_md5'.format(img['size_name'])] = img['md5']
     cameras = {}
     images = []
+    days = set()
     for img_data in data.values():
         camera_name = img_data.pop('camera_name')
         shot_at = img_data.pop('shot_at')
+        days.add((camera_name, shot_at.date()))
         if camera_name not in cameras:
             cameras[camera_name] = models.Camera.objects.get(
                 name=camera_name,
@@ -159,6 +161,11 @@ def create_or_update_images_from_urls(urls):
         if cameras[camera_name].auto_resize_original:
             from .tasks import create_thumbnails_for_image
             create_thumbnails_for_image.delay(image_id=image.id)
+    for camera_name, date in days:
+        models.Day.objects.get_or_create(
+            camera=cameras[camera_name],
+            date=date,
+        )
     return images
 
 
