@@ -8,8 +8,6 @@ import '../../node_modules/react-mdl/extra/material.js';
 import Route from './routes/Route';
 
 const rootNode = document.getElementById('react-app');
-// const rootNode = document.createElement('div');
-// document.body.appendChild(rootNode);
 
 
 Relay.injectNetworkLayer(

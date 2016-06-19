@@ -15,18 +15,9 @@ RUN /stack/node/install.sh
 
 ## node modules
 ## ------------
-## package.json is put into / so that mounting /app for local development
-## does not require re-running npm install
-#ENV PATH=/node_modules/.bin:$PATH
-#RUN npm install -g npm-install-retry
-#COPY package.json /
-#RUN (cd / && npm-install-retry -- --production)
-
-## bower requirements
-## ------------------
-#COPY bower.json /app/
-#COPY .bowerrc /app/
-#RUN bower install --verbose --allow-root --config.interactive=false
+ENV PATH=/app/node_modules/.bin:$PATH
+COPY package.json /app/package.json
+RUN npm install
 
 # python requirements
 # -------------------
@@ -38,10 +29,3 @@ RUN pip install --no-deps -r requirements.txt
 RUN python -c "from imageio.plugins import avbin; avbin.get_avbin_lib()"
 RUN python -c "from imageio.plugins import _freeimage; _freeimage.get_freeimage_lib()"
 RUN python -c "from imageio.plugins import ffmpeg; ffmpeg.get_exe()"
-
-#ENV PATH=/node_modules/.bin:$PATH
-#RUN npm install -g npm-install-retry
-#COPY package.json /app/package.json
-##RUN (ln -s /app/package.json /package.json && cd / && npm-install-retry)
-#RUN (ln -s /app/package.json /package.json && cd / && npm install)
-

@@ -28,4 +28,6 @@ docker-compose.override.yml
 tmp
 
 webpack-stats.json
+webpack-stats-prod.json
 assets/bundles
+assets/dist

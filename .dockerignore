@@ -5,3 +5,8 @@ data
 static_collected
 node_modules
 tmp
+
+webpack-stats.json
+webpack-stats-prod.json
+assets/bundles
+assets/dist
