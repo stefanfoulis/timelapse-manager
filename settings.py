@@ -95,6 +95,11 @@ WEBPACK_LOADER = {
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json')
     }
 }
+if not DEBUG:
+    WEBPACK_LOADER['DEFAULT'].update({
+        'BUNDLE_DIR_NAME': 'dist/',
+        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats-prod.json'),
+    })
 INSTALLED_APPS.append('webpack_loader')
 INSTALLED_APPS.append('graphene.contrib.django')
 INSTALLED_APPS.append('django_graphiql')

@@ -13,8 +13,7 @@ COPY . /app
 
 # static compilation with gulp (e.g sass)
 # ---------------------------------------
-#ENV GULP_MODE=production
-#RUN gulp build; exit 0
+RUN webpack --config webpack.prod.config.js --progress --colors
 
 # collectstatic
 # -------------

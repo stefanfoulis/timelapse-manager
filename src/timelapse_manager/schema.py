@@ -38,6 +38,7 @@ class Image(DjangoNode):
             'original': ['exact', 'icontains', 'istartswith'],
             'original_md5': ['exact', 'icontains', 'istartswith'],
         }
+        order_by_fields = True
 
     original_url = graphene.StringField(source='original')
     scaled_at_160x120_url = graphene.StringField(source='scaled_at_160x120')
@@ -86,18 +87,28 @@ class User(DjangoNode):
         'password',
     )
     images = DjangoFilterConnectionField(Image)
+    latest_image = graphene.Field(Image)
 
     @graphene.resolve_only_args
     def resolve_images(self, first=None):
         first = first or 10
         return models.Image.objects.all().order_by('-shot_at')[:first]
 
+    @graphene.resolve_only_args
+    def resolve_latest_image(self):
+        return models.Image.objects.filter(
+            original__isnull=False,
+            scaled_at_160x120__isnull=False,
+            scaled_at_320x240__isnull=False,
+            scaled_at_640x480__isnull=False,
+        ).order_by('-shot_at').first()
+
 
 class Query(graphene.ObjectType):
     image = relay.NodeField(Image)
-    all_images = DjangoFilterConnectionField(Camera)
+    all_images = DjangoFilterConnectionField(Image)
 
-    camera = relay.NodeField(Image)
+    camera = relay.NodeField(Camera)
     all_cameras = DjangoFilterConnectionField(Camera)
 
     day = relay.NodeField(Day)
