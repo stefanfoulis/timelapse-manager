@@ -11,7 +11,7 @@ const rootNode = document.getElementById('react-app');
 
 
 Relay.injectNetworkLayer(
-  new Relay.DefaultNetworkLayer('http://timelapse-manager.aldryn.me/graphql', {
+  new Relay.DefaultNetworkLayer('/graphql', {
     credentials: 'same-origin',
   })
 );
