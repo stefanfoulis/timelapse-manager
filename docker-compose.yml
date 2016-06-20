@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.base
-    image: stefanfoulis/timelapse-manager:1.4.0
+    image: stefanfoulis/timelapse-manager:1.5.0
     command: bash
 
   base:
