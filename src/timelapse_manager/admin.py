@@ -66,7 +66,7 @@ class CameraAdmin(admin.ModelAdmin):
 
     def discover_images_action(self, request, queryset):
         for camera in queryset:
-            tasks.discover_images.delay(camera_id=camera.id)
+            tasks.discover_images.delay(camera_id=str(camera.id))
 
 
 class ImageAdmin(admin.ModelAdmin):
@@ -332,7 +332,7 @@ class MovieRenderingAdmin(admin.ModelAdmin):
     def render_action(self, request, queryset):
         for obj in queryset:
             tasks.render_movie.delay(
-                movie_rendering_id='{}'.format(obj.id)
+                movie_rendering_id=str(obj.id)
             )
 
 

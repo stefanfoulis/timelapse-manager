@@ -160,7 +160,7 @@ def create_or_update_images_from_urls(urls):
             )
         if cameras[camera_name].auto_resize_original:
             from .tasks import create_thumbnails_for_image
-            create_thumbnails_for_image.delay(image_id=image.id)
+            create_thumbnails_for_image.delay(image_id=str(image.id))
     for camera_name, date in days:
         models.Day.objects.get_or_create(
             camera=cameras[camera_name],
