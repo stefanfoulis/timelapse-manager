@@ -1,6 +1,8 @@
 FROM stefanfoulis/timelapse-manager:1.5.0
 
 COPY . /app
+# gzip does not seem to work with python3 yet
+ENV DISABLE_GZIP=True
 
 RUN DJANGO_MODE=build python manage.py graphql_schema
 RUN npm run build-production
