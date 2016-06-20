@@ -29,3 +29,10 @@ RUN pip install --no-deps -r requirements.txt
 RUN python -c "from imageio.plugins import avbin; avbin.get_avbin_lib()"
 RUN python -c "from imageio.plugins import _freeimage; _freeimage.get_freeimage_lib()"
 RUN python -c "from imageio.plugins import ffmpeg; ffmpeg.get_exe()"
+
+
+COPY . /app
+
+RUN DJANGO_MODE=build python manage.py graphql_schema
+RUN npm run build-production
+RUN DJANGO_MODE=build python manage.py collectstatic --noinput --link

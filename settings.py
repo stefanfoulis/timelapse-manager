@@ -104,3 +104,5 @@ INSTALLED_APPS.append('webpack_loader')
 INSTALLED_APPS.append('graphene.contrib.django')
 INSTALLED_APPS.append('django_graphiql')
 GRAPHENE_SCHEMA='schema'
+
+ADDON_URLS_I18N_LAST = 'timelapse_manager.urls'

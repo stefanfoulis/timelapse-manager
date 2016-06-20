@@ -1,4 +1,4 @@
-FROM stefanfoulis/timelapse-manager:base-py3-1.2
+FROM stefanfoulis/timelapse-manager:1.4.0
 
 COPY . /app
 
