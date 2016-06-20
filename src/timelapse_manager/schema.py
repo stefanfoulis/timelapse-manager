@@ -38,7 +38,6 @@ class Image(DjangoNode):
             'original': ['exact', 'icontains', 'istartswith'],
             'original_md5': ['exact', 'icontains', 'istartswith'],
         }
-        order_by_fields = True
 
     original_url = graphene.StringField(source='original')
     scaled_at_160x120_url = graphene.StringField(source='scaled_at_160x120')
