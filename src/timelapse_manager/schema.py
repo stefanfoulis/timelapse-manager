@@ -3,6 +3,7 @@ from __future__ import unicode_literals, absolute_import
 
 import graphene
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from graphene import relay
 from graphql_relay import from_global_id
 
@@ -95,11 +96,11 @@ class User(DjangoNode):
 
     @graphene.resolve_only_args
     def resolve_latest_image(self):
-        return models.Image.objects.filter(
-            original__isnull=False,
-            scaled_at_160x120__isnull=False,
-            scaled_at_320x240__isnull=False,
-            scaled_at_640x480__isnull=False,
+        return models.Image.objects.exclude(
+            Q(original='') |
+            Q(scaled_at_160x120='') |
+            Q(scaled_at_320x240='') |
+            Q(scaled_at_640x480='')
         ).order_by('-shot_at').first()
 
 
