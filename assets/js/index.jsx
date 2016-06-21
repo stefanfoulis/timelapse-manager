@@ -9,6 +9,11 @@ import Route from './routes/Route';
 
 const rootNode = document.getElementById('react-app');
 
+import injectTapEventPlugin from 'react-tap-event-plugin';
+// Needed for onTouchTap
+// http://stackoverflow.com/a/34015469/988941
+injectTapEventPlugin();
+
 
 Relay.injectNetworkLayer(
   new Relay.DefaultNetworkLayer('/graphql', {
