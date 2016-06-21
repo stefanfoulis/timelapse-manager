@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
+import django_filters
 import graphene
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django_filters import FilterSet
 from graphene import relay
 from graphql_relay import from_global_id
+from graphene.core.types import LazyType
 
 from graphene.contrib.django.filter import DjangoFilterConnectionField
 
 from graphene.contrib.django.types import DjangoNode
 
+from timelapse_manager import schema_filters
 from . import models
 from django.contrib.auth import models as auth_models
 
@@ -20,14 +24,6 @@ def get_url(instance, fieldname):
     if field:
         return field.url
     return ''
-
-
-class Camera(DjangoNode):
-    class Meta:
-        model = models.Camera
-        filter_fields = {
-            'name': ['exact', 'icontains', 'istartswith'],
-        }
 
 
 class Image(DjangoNode):
@@ -65,12 +61,33 @@ class Image(DjangoNode):
 class Day(DjangoNode):
     class Meta:
         model = models.Day
+        filter_fields = [
+            'date',
+        ]
 
     images = DjangoFilterConnectionField(Image)
+    key_frames = DjangoFilterConnectionField(Image)
 
     @graphene.with_context
     def resolve_images(self, args, context, info):
         return self.instance.images.all()
+
+    @graphene.with_context
+    def resolve_key_frames(self, args, context, info):
+        return self.instance.key_frames.all()
+
+
+class Camera(DjangoNode):
+    class Meta:
+        model = models.Camera
+        filter_fields = {
+            'name': ['exact', 'icontains', 'istartswith'],
+        }
+
+    days = DjangoFilterConnectionField(
+        Day,
+        filterset_class=schema_filters.DayFilter,
+    )
 
 
 class User(DjangoNode):
@@ -110,9 +127,13 @@ class Query(graphene.ObjectType):
 
     camera = relay.NodeField(Camera)
     all_cameras = DjangoFilterConnectionField(Camera)
+    default_camera = graphene.Field(Camera)
 
     day = relay.NodeField(Day)
-    all_days = DjangoFilterConnectionField(Day)
+    all_days = DjangoFilterConnectionField(
+        Day,
+        filterset_class=schema_filters.DayFilter
+    )
 
     viewer = graphene.Field(User)
 
@@ -121,3 +142,7 @@ class Query(graphene.ObjectType):
         if context.user.is_anonymous():
             return None
         return User(context.user)
+
+    @graphene.with_context
+    def resolve_default_camera(self, args, context, info):
+        return Camera(models.Camera.objects.all().first())
