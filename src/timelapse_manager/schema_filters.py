@@ -2,19 +2,7 @@
 from __future__ import unicode_literals, absolute_import
 
 import django_filters
-import graphene
-from django.core.exceptions import ValidationError
-from django.db.models import Q
-from django_filters import FilterSet
-from graphene import relay
-from graphql_relay import from_global_id
-
-from graphene.contrib.django.filter import DjangoFilterConnectionField
-
-from graphene.contrib.django.types import DjangoNode
-
 from . import models
-from django.contrib.auth import models as auth_models
 
 
 class DayFilter(django_filters.FilterSet):
@@ -27,5 +15,16 @@ class DayFilter(django_filters.FilterSet):
         model = models.Day
         fields = (
             'date',
+        )
+        order_by = True
+
+
+class ImageFilter(django_filters.FilterSet):
+    shot_at = django_filters.DateTimeFilter(lookup_type='iexact')
+
+    class Meta:
+        model = models.Day
+        fields = (
+            'shot_at',
         )
         order_by = True

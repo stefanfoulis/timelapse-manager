@@ -3,9 +3,9 @@ import ImageGrid from './ImageGridComponent';
 
 export default Relay.createContainer(ImageGrid, {
   fragments: {
-    viewer: () => Relay.QL`
-      fragment on User {
-        images(first: 10) {
+    camera: () => Relay.QL`
+      fragment on Camera {
+        images(first: 9, orderBy: "-shot_at") {
           edges {
             node {
               id

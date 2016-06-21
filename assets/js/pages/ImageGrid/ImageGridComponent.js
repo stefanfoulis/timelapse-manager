@@ -7,14 +7,14 @@ import Image from '../../components/Image/ImageComponent';
 
 export default class Feature extends React.Component {
   static propTypes = {
-    viewer: React.PropTypes.object.isRequired
+    camera: React.PropTypes.object.isRequired
   };
 
   render() {
     return (
       <Page heading='Images'>
         <Grid>
-          {this.props.viewer.images.edges.map(edge => {
+          {this.props.camera.images.edges.map(edge => {
             return (
               <Cell col={4} key={edge.node.id}>
                 <Card>

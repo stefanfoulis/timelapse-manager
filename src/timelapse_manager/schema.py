@@ -88,6 +88,20 @@ class Camera(DjangoNode):
         Day,
         filterset_class=schema_filters.DayFilter,
     )
+    images = DjangoFilterConnectionField(
+        Image,
+        filterset_class=schema_filters.ImageFilter,
+    )
+    latest_image = graphene.Field(Image)
+
+    @graphene.resolve_only_args
+    def resolve_latest_image(self):
+        return models.Image.objects.exclude(
+            Q(original='') |
+            Q(scaled_at_160x120='') |
+            Q(scaled_at_320x240='') |
+            Q(scaled_at_640x480='')
+        ).order_by('-shot_at').first()
 
 
 class User(DjangoNode):
