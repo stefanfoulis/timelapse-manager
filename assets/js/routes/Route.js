@@ -2,11 +2,11 @@ import React from 'react';
 import { IndexRoute, Route, Redirect } from 'react-router';
 
 import ViewerQuery from './ViewerQuery';
-import AppContainer from '../components/App/AppContainer';
-import ImageGrid from '../components/ImageGrid/ImageGridContainer';
-import FeatureContainer from '../components/Feature/FeatureContainer';
-import SignupComponent from '../components/Signup/SignupComponent';
-import LoginComponent from '../components/Login/LoginComponent';
+import AppContainer from '../core/App/AppContainer';
+import ImageGrid from '../pages/ImageGrid/ImageGridContainer';
+import FeatureContainer from '../pages/Feature/FeatureContainer';
+import SignupComponent from '../pages/Signup/SignupComponent';
+import LoginComponent from '../pages/Login/LoginComponent';
 
 export default (
   <Route path='/' component={AppContainer} queries={ViewerQuery}>

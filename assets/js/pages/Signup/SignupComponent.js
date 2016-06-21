@@ -1,11 +1,11 @@
 import React from 'react';
-import { Grid, Cell, Textfield, Button, Checkbox } from 'react-mdl';
-import Page from '../Page/PageComponent';
+import { Grid, Cell, Textfield, Button } from 'react-mdl';
+import Page from '../../core/Page/PageComponent';
 
-export default class Login extends React.Component {
+export default class Signup extends React.Component {
   render() {
     return (
-      <Page heading='Login'>
+      <Page heading='Signup'>
         <div style={{ width: '70%', margin: 'auto' }}>
           <Grid>
             <form style={{ margin: 'auto' }}>
@@ -15,12 +15,8 @@ export default class Login extends React.Component {
               <Cell col={12}>
                 <Textfield onChange={() => {}} label='Password' />
               </Cell>
-              <Cell col={12}>
-                <Checkbox label='Remember me. PLEASE!' ripple style={{ textAlign: 'right' }} />
-              </Cell>
               <Cell col={12} style={{ textAlign: 'right' }}>
-                <a href='#'>Forgot password</a>
-                <Button primary>Login</Button>
+                <Button primary>Sign up</Button>
               </Cell>
             </form>
           </Grid>

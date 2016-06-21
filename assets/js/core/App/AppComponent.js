@@ -8,10 +8,8 @@ import styles from './App.scss';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
-
 var Countdown = require('react-cntdwn');
 
-import CountdownCard from '../CountdownCard/CountdownCardComponent'
 
 export default class App extends React.Component {
   static propTypes = {

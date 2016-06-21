@@ -2,8 +2,8 @@
 import React from 'react';
 import { Grid, Cell } from 'react-mdl';
 import {Card, CardMedia} from 'material-ui/Card';
-import Page from '../Page/PageComponent';
-import Image from '../Image/ImageComponent';
+import Page from '../../core/Page/PageComponent';
+import Image from '../../components/Image/ImageComponent';
 
 export default class Feature extends React.Component {
   static propTypes = {
