@@ -44,6 +44,31 @@ class Form(forms.BaseForm):
         initial='["en", "de"]',
         help_text=SYSTEM_FIELD_WARNING,
     )
+    use_manifeststaticfilesstorage = forms.CheckboxField(
+        'Hash static file names',
+        required=False,
+        initial=False,
+        help_text=(
+            'Use ManifestStaticFilesStorage to manage static files and set '
+            'far-expiry headers. Enabling this option disables autosync for '
+            'static files, and can cause deployment and/or 500 errors if a '
+            'referenced file is missing. Please ensure that your Test server '
+            'works with this option enabled before deploying it to the live '
+            'site.'
+        )
+    )
+    enable_gis = forms.CheckboxField(
+        'Enable django.contrib.gis',
+        required=False,
+        initial=False,
+        help_text=(
+            'Enable Geodjango (django.contrib.gis) related functionality.\n'
+            'WARNING: Requires postgis (contact support to enable it for your '
+            'project). For local development change "postgres:9.4" to '
+            '"mdillon/postgis:9.4" in docker-compose.yml and run '
+            '"aldryn project up" to re-create the db container.'
+        )
+    )
 
     def to_settings(self, data, settings):
         import dj_database_url
@@ -170,9 +195,12 @@ class Form(forms.BaseForm):
         self.sentry_settings(settings, env=env)
         self.cache_settings(settings, env=env)
         self.storage_settings_for_media(settings, env=env)
-        self.storage_settings_for_static(settings, env=env)
+        self.storage_settings_for_static(data, settings, env=env)
         self.i18n_settings(data, settings, env=env)
         self.migration_settings(settings, env=env)
+        settings['ALDRYN_DJANGO_ENABLE_GIS'] = data['enable_gis']
+        if settings['ALDRYN_DJANGO_ENABLE_GIS']:
+            self.gis_settings(settings, env=env)
         return settings
 
     def domain_settings(self, data, settings, env):
@@ -248,13 +276,15 @@ class Form(forms.BaseForm):
         )
 
         # Add the debreach middlewares to counter CRIME/BREACH attacks.
-        # We always add it even if the GzipMiddleware is not enabled because
+        # We always add it even if the GZipMiddleware is not enabled because
         # we cannot assume that every upstream proxy implements a
         # countermeasure itself.
+        s['RANDOM_COMMENT_EXCLUDED_VIEWS'] = set([])
         if 'django.middleware.gzip.GZipMiddleware' in s['MIDDLEWARE_CLASSES']:
             index = s['MIDDLEWARE_CLASSES'].index('django.middleware.gzip.GZipMiddleware') + 1
         else:
             index = 0
+        s['MIDDLEWARE_CLASSES'].insert(index, 'aldryn_django.middleware.RandomCommentExclusionMiddleware')
         s['MIDDLEWARE_CLASSES'].insert(index, 'debreach.middleware.RandomCommentMiddleware')
         if 'django.middleware.csrf.CsrfViewMiddleware' in s['MIDDLEWARE_CLASSES']:
             s['MIDDLEWARE_CLASSES'].insert(
@@ -368,10 +398,32 @@ class Form(forms.BaseForm):
         settings['MEDIA_ROOT'] = env('MEDIA_ROOT', os.path.join(settings['DATA_ROOT'], 'media'))
         settings['MEDIA_HEADERS'] = []
 
-    def storage_settings_for_static(self, settings, env):
+        cmds = {}
+        if os.path.exists('/usr/bin/pngout'):
+            cmds['png'] = '/usr/bin/pngout {filename} {filename}.png -s0 -y -force && mv {filename}.png {filename}'
+        if os.path.exists('/usr/bin/jpegoptim'):
+            cmds['jpeg'] = '/usr/bin/jpegoptim --max=90 --overwrite --strip-all --all-progressive {filename}'
+        if os.path.exists('/usr/bin/gifsicle'):
+            cmds['gif'] = '/usr/bin/gifsicle --batch --optimize=2 {filename}'
+        settings['THUMBNAIL_OPTIMIZE_COMMAND'] = cmds
+
+    def storage_settings_for_static(self, data, settings, env):
         import yurl
-        if not env('DISABLE_GZIP'):
-            settings['STATICFILES_STORAGE'] = 'aldryn_django.storage.GzippedStaticFilesStorage'
+
+        use_gzip = not env('DISABLE_GZIP')
+        use_manifest = data['use_manifeststaticfilesstorage']
+        if use_gzip:
+            if use_manifest:
+                storage = 'aldryn_django.storage.ManifestGZippedStaticFilesStorage'
+            else:
+                storage = 'aldryn_django.storage.GZippedStaticFilesStorage'
+        else:
+            if use_manifest:
+                storage = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+            else:
+                storage = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        settings['STATICFILES_STORAGE'] = storage
+
         settings['STATIC_URL'] = env('STATIC_URL', '/static/')
         static_host = yurl.URL(settings['STATIC_URL']).host
         settings['STATIC_URL_IS_ON_OTHER_DOMAIN'] = (
@@ -393,7 +445,7 @@ class Form(forms.BaseForm):
             }),
             # Set default expiration headers for all remaining static files.
             # *Has to be last* as processing stops at the first matching
-            # pattern it finds.  Also set cors headers to * for fonts.
+            # pattern it finds. Also set cors headers to * for fonts.
             (r'.*\.(eot|ttf|otf|woff)', {
                 'Access-Control-Allow-Origin': '*',
                 'Cache-Control': 'public, max-age={}'.format(
@@ -442,3 +494,7 @@ class Form(forms.BaseForm):
         if not env('DISABLE_S3_MEDIA_HEADERS_UPDATE'):
             if settings['DEFAULT_FILE_STORAGE'] == storage.SCHEMES['s3']:
                 mcmds.append('python manage.py aldryn_update_s3_media_headers')
+
+    def gis_settings(self, settings, env):
+        settings['DATABASES']['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+        settings['INSTALLED_APPS'].append('django.contrib.gis')
