@@ -1,4 +1,4 @@
-FROM aldryn/base-project:py3-3.13.1
+FROM aldryn/base-project:py3-3.15
 
 ENV PYTHONPATH /app/src:$PYTHONPATH
 
