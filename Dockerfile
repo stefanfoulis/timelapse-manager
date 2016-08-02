@@ -1,4 +1,4 @@
-FROM stefanfoulis/timelapse-manager:1.7.1
+FROM stefanfoulis/timelapse-manager:1.8.0
 
 COPY . /app
 # gzip does not seem to work with python3 yet
