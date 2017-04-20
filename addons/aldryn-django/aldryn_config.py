@@ -52,7 +52,7 @@ class Form(forms.BaseForm):
             'Use ManifestStaticFilesStorage to manage static files and set '
             'far-expiry headers. Enabling this option disables autosync for '
             'static files, and can cause deployment and/or 500 errors if a '
-            'referenced file is missing. Please ensure that your Test server '
+            'referenced file is missing. Please ensure that your test server '
             'works with this option enabled before deploying it to the live '
             'site.'
         )
@@ -67,6 +67,15 @@ class Form(forms.BaseForm):
             'project). For local development change "postgres:9.4" to '
             '"mdillon/postgis:9.4" in docker-compose.yml and run '
             '"aldryn project up" to re-create the db container.'
+        )
+    )
+    disable_default_language_prefix = forms.CheckboxField(
+        'Remove URL language prefix for default language',
+        required=False,
+        initial=False,
+        help_text=(
+            'For example, http://example.com/ rather than '
+            'http://example.com/en/ if en (English) is the default language.'
         )
     )
 
@@ -86,6 +95,7 @@ class Form(forms.BaseForm):
             env('ENABLE_SYNCING', settings['DEBUG']))
         settings['DISABLE_TEMPLATE_CACHE'] = boolean_ish(
             env('DISABLE_TEMPLATE_CACHE', settings['DEBUG']))
+
         settings['DATABASE_URL'] = env('DATABASE_URL')
         settings['CACHE_URL'] = env('CACHE_URL')
         if env('DJANGO_MODE') == 'build':
@@ -117,7 +127,6 @@ class Form(forms.BaseForm):
         settings['DATABASES']['default'] = dj_database_url.parse(settings['DATABASE_URL'])
 
         settings['ROOT_URLCONF'] = env('ROOT_URLCONF', 'urls')
-        settings['ADDON_URLS'].append('aldryn_django.urls')
         settings['ADDON_URLS_I18N'].append('aldryn_django.i18n_urls')
 
         settings['WSGI_APPLICATION'] = 'wsgi.application'
@@ -147,13 +156,13 @@ class Form(forms.BaseForm):
                     'context_processors': [
                         'django.contrib.auth.context_processors.auth',
                         'django.contrib.messages.context_processors.messages',
-                        'django.core.context_processors.i18n',
-                        'django.core.context_processors.debug',
-                        'django.core.context_processors.request',
-                        'django.core.context_processors.media',
-                        'django.core.context_processors.csrf',
-                        'django.core.context_processors.tz',
-                        'django.core.context_processors.static',
+                        'django.template.context_processors.i18n',
+                        'django.template.context_processors.debug',
+                        'django.template.context_processors.request',
+                        'django.template.context_processors.media',
+                        'django.template.context_processors.csrf',
+                        'django.template.context_processors.tz',
+                        'django.template.context_processors.static',
                         'aldryn_django.context_processors.debug',
                     ],
                     'loaders': loader_list_class([
@@ -196,6 +205,7 @@ class Form(forms.BaseForm):
         self.cache_settings(settings, env=env)
         self.storage_settings_for_media(settings, env=env)
         self.storage_settings_for_static(data, settings, env=env)
+        self.email_settings(data, settings, env=env)
         self.i18n_settings(data, settings, env=env)
         self.migration_settings(settings, env=env)
         settings['ALDRYN_DJANGO_ENABLE_GIS'] = data['enable_gis']
@@ -252,7 +262,7 @@ class Form(forms.BaseForm):
 
     def security_settings(self, data, settings, env):
         s = settings
-        s['SECURE_SSL_REDIRECT'] = env('SECURE_SSL_REDIRECT', False)
+        s['SECURE_SSL_REDIRECT'] = env('SECURE_SSL_REDIRECT', None)
         s['SECURE_REDIRECT_EXEMPT'] = env('SECURE_REDIRECT_EXEMPT', [])
         s['SECURE_HSTS_SECONDS'] = env('SECURE_HSTS_SECONDS', 0)
         # SESSION_COOKIE_SECURE is handled by
@@ -274,23 +284,6 @@ class Form(forms.BaseForm):
             s['MIDDLEWARE_CLASSES'].index('aldryn_sites.middleware.SiteMiddleware') + 1,
             'django.middleware.security.SecurityMiddleware',
         )
-
-        # Add the debreach middlewares to counter CRIME/BREACH attacks.
-        # We always add it even if the GZipMiddleware is not enabled because
-        # we cannot assume that every upstream proxy implements a
-        # countermeasure itself.
-        s['RANDOM_COMMENT_EXCLUDED_VIEWS'] = set([])
-        if 'django.middleware.gzip.GZipMiddleware' in s['MIDDLEWARE_CLASSES']:
-            index = s['MIDDLEWARE_CLASSES'].index('django.middleware.gzip.GZipMiddleware') + 1
-        else:
-            index = 0
-        s['MIDDLEWARE_CLASSES'].insert(index, 'aldryn_django.middleware.RandomCommentExclusionMiddleware')
-        s['MIDDLEWARE_CLASSES'].insert(index, 'debreach.middleware.RandomCommentMiddleware')
-        if 'django.middleware.csrf.CsrfViewMiddleware' in s['MIDDLEWARE_CLASSES']:
-            s['MIDDLEWARE_CLASSES'].insert(
-                s['MIDDLEWARE_CLASSES'].index('django.middleware.csrf.CsrfViewMiddleware'),
-                'debreach.middleware.CSRFCryptMiddleware',
-            )
 
     def server_settings(self, settings, env):
         settings['PORT'] = env('PORT', 80)
@@ -319,6 +312,9 @@ class Form(forms.BaseForm):
         settings['DJANGO_WEB_WORKERS'] = env('DJANGO_WEB_WORKERS', 3)
         settings['DJANGO_WEB_MAX_REQUESTS'] = env('DJANGO_WEB_MAX_REQUESTS', 500)
         settings['DJANGO_WEB_TIMEOUT'] = env('DJANGO_WEB_TIMEOUT', 120)
+
+        # https://docs.djangoproject.com/en/1.8/ref/settings/#use-x-forwarded-host
+        settings['USE_X_FORWARDED_HOST'] = env('USE_X_FORWARDED_HOST', False)
 
     def logging_settings(self, settings, env):
         settings['LOGGING'] = {
@@ -409,7 +405,6 @@ class Form(forms.BaseForm):
 
     def storage_settings_for_static(self, data, settings, env):
         import yurl
-
         use_gzip = not env('DISABLE_GZIP')
         use_manifest = data['use_manifeststaticfilesstorage']
         if use_gzip:
@@ -463,20 +458,43 @@ class Form(forms.BaseForm):
             [os.path.join(settings['BASE_DIR'], 'static')]
         )
 
+    def email_settings(self, data, settings, env):
+        import dj_email_url
+
+        email_url = env('EMAIL_URL', '')
+        if email_url:
+            settings['EMAIL_URL'] = email_url
+            settings.update(dj_email_url.parse(email_url))
+
+        from_email = env('DEFAULT_FROM_EMAIL', '')
+        if from_email:
+            settings['DEFAULT_FROM_EMAIL'] = from_email
+
+        server_email = env('SERVER_EMAIL', '')
+        if server_email:
+            settings['SERVER_EMAIL'] = server_email
+
     def i18n_settings(self, data, settings, env):
         settings['ALL_LANGUAGES'] = list(settings['LANGUAGES'])
         settings['ALL_LANGUAGES_DICT'] = dict(settings['ALL_LANGUAGES'])
-        languages = json.loads(data['languages'])
-        settings['LANGUAGE_CODE'] = languages[0]
+        languages = [
+            (code, settings['ALL_LANGUAGES_DICT'][code])
+            for code in json.loads(data['languages'])
+        ]
+        settings['LANGUAGE_CODE'] = languages[0][0]
         settings['USE_L10N'] = True
         settings['USE_I18N'] = True
-        settings['LANGUAGES'] = [
-            (code, settings['ALL_LANGUAGES_DICT'][code])
-            for code in languages
-        ]
+        settings['LANGUAGES'] = languages
         settings['LOCALE_PATHS'] = [
             os.path.join(settings['BASE_DIR'], 'locale'),
         ]
+        settings['PREFIX_DEFAULT_LANGUAGE'] = not data['disable_default_language_prefix']
+
+        if not settings['PREFIX_DEFAULT_LANGUAGE']:
+            settings['MIDDLEWARE_CLASSES'].insert(
+                settings['MIDDLEWARE_CLASSES'].index('django.middleware.locale.LocaleMiddleware'),
+                'aldryn_django.middleware.LanguagePrefixFallbackMiddleware',
+            )
 
     def time_settings(self, settings, env):
         if env('TIME_ZONE'):
@@ -484,14 +502,15 @@ class Form(forms.BaseForm):
 
     def migration_settings(self, settings, env):
         from aldryn_django import storage
+        from aldryn_addons.utils import boolean_ish
 
         settings.setdefault('MIGRATION_COMMANDS', [])
         mcmds = settings['MIGRATION_COMMANDS']
 
         mcmds.append('CACHE_URL="locmem://" python manage.py createcachetable django_dbcache; exit 0')
-        mcmds.append('python manage.py migrate --list --noinput && python manage.py migrate --noinput')
+        mcmds.append('python manage.py migrate --noinput')
 
-        if not env('DISABLE_S3_MEDIA_HEADERS_UPDATE'):
+        if not boolean_ish(env('DISABLE_S3_MEDIA_HEADERS_UPDATE')):
             if settings['DEFAULT_FILE_STORAGE'] == storage.SCHEMES['s3']:
                 mcmds.append('python manage.py aldryn_update_s3_media_headers')
 
