@@ -28,21 +28,17 @@ class ImageNode(DjangoObjectType):
     scaled_at_320x240_url = graphene.String(source='scaled_at_320x240')
     scaled_at_640x480_url = graphene.String(source='scaled_at_640x480')
 
-    @graphene.resolve_only_args
-    def resolve_original_url(self):
-        return get_url(self.instance, 'original')
+    def resolve_original_url(self, args, context, info):
+        return get_url(self, 'original')
 
-    @graphene.resolve_only_args
-    def resolve_scaled_at_160x120_url(self):
-        return get_url(self.instance, 'scaled_at_160x120')
+    def resolve_scaled_at_160x120_url(self, args, context, info):
+        return get_url(self, 'scaled_at_160x120')
 
-    @graphene.resolve_only_args
-    def resolve_scaled_at_320x240_url(self):
-        return get_url(self.instance, 'scaled_at_320x240')
+    def resolve_scaled_at_320x240_url(self, args, context, info):
+        return get_url(self, 'scaled_at_320x240')
 
-    @graphene.resolve_only_args
-    def resolve_scaled_at_640x480_url(self):
-        return get_url(self.instance, 'scaled_at_640x480')
+    def resolve_scaled_at_640x480_url(self, args, context, info):
+        return get_url(self, 'scaled_at_640x480')
 
 
 class DayNode(DjangoObjectType):
@@ -54,10 +50,10 @@ class DayNode(DjangoObjectType):
     key_frames = DjangoFilterConnectionField(ImageNode)
 
     def resolve_images(self, args, context, info):
-        return self.instance.images.all()
+        return self.images.all()
 
     def resolve_key_frames(self, args, context, info):
-        return self.instance.key_frames.all()
+        return self.key_frames.all()
 
 
 class CameraNode(DjangoObjectType):
@@ -124,7 +120,7 @@ class Query(graphene.AbstractType):
     image = Node.Field(ImageNode)
     all_images = DjangoFilterConnectionField(
         ImageNode,
-        # filterset_class=schema_filters.ImageFilter,
+        filterset_class=schema_filters.ImageFilter,
     )
 
     camera = Node.Field(CameraNode)
@@ -134,7 +130,7 @@ class Query(graphene.AbstractType):
     day = Node.Field(DayNode)
     all_days = DjangoFilterConnectionField(
         DayNode,
-        # filterset_class=schema_filters.DayFilter,
+        filterset_class=schema_filters.DayFilter,
     )
 
     viewer = graphene.Field(UserNode)

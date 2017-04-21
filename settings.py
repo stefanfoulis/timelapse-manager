@@ -87,5 +87,8 @@ dictConfig(LOGGING)
 INSTALLED_APPS.append('graphene_django')
 INSTALLED_APPS.append('django_graphiql')
 GRAPHENE = {
-    'SCHEMA': 'schema',
+    'MIDDLEWARE': [
+        # Not sure if this is needed. It seemed to work without it too.
+        'graphene_django.debug.DjangoDebugMiddleware',
+    ]
 }
