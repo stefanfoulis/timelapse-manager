@@ -2,6 +2,7 @@
 https://control.divio.com/api/v1/apps/serve/aldryn-addons/1.0.2/24f5d1c8-66fe-43b2-a540-17d61045a72b/aldryn-addons-1.0.2.tar.gz#egg=aldryn-addons==1.0.2
 https://control.divio.com/api/v1/apps/serve/aldryn-django/1.10.7.1/76477eb6-e977-4cea-8c0e-92f5970fb080/aldryn-django-1.10.7.1.tar.gz#egg=aldryn-django==1.10.7.1
 https://control.divio.com/api/v1/apps/serve/aldryn-sso/1.1.14/39be82e7-3fc0-4b9a-8635-008e3db27cea/aldryn-sso-1.1.14.tar.gz#egg=aldryn-sso==1.1.14
+https://control.divio.com/api/v1/apps/serve/aldryn-celery/3.1.25.3/2352ce31-f42d-4dbb-9783-8efc65ed893d/aldryn-celery-3.1.25.3.tar.gz#egg=aldryn-celery==3.1.25.3
 # </INSTALLED_ADDONS>
 
 ipython
