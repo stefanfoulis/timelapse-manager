@@ -83,25 +83,8 @@ from logging.config import dictConfig
 dictConfig(LOGGING)
 
 
-# react related stuff
-STATICFILES_DIRS.insert(
-    0,
-    os.path.join(BASE_DIR, 'assets')
-)
-WEBPACK_LOADER = {
-    'DEFAULT': {
-        'BUNDLE_DIR_NAME': 'bundles/',
-        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json')
-    }
-}
-if not DEBUG:
-    WEBPACK_LOADER['DEFAULT'].update({
-        'BUNDLE_DIR_NAME': 'dist/',
-        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats-prod.json'),
-    })
-INSTALLED_APPS.append('webpack_loader')
-INSTALLED_APPS.append('graphene.contrib.django')
+INSTALLED_APPS.append('graphene_django')
 INSTALLED_APPS.append('django_graphiql')
-GRAPHENE_SCHEMA='schema'
-
-ADDON_URLS_I18N_LAST = 'timelapse_manager.urls'
+GRAPHENE = {
+    'SCHEMA': 'schema',
+}

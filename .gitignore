@@ -31,3 +31,5 @@ webpack-stats.json
 webpack-stats-prod.json
 assets/bundles
 assets/dist
+
+requirements.urls

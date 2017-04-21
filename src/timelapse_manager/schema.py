@@ -10,9 +10,8 @@ from graphene import relay
 from graphql_relay import from_global_id
 from graphene.core.types import LazyType
 
-from graphene.contrib.django.filter import DjangoFilterConnectionField
-
-from graphene.contrib.django.types import DjangoNode
+from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 
 from timelapse_manager import schema_filters
 from . import models

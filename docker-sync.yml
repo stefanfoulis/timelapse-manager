@@ -1,0 +1,9 @@
+version: '2'
+options:
+  verbose: true
+syncs:
+  timelapseapp-backend-src-sync:
+    src: './'
+    dest: '/app'
+    sync_excludes: ['.git', 'data', '.idea', 'node_modules', '*.pyc']
+    sync_host_port: 10891

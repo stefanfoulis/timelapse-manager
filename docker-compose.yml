@@ -1,55 +1,40 @@
 version: "2"
 
 services:
-  baseimg:
-    build:
-      context: .
-      dockerfile: Dockerfile.base
-    image: stefanfoulis/timelapse-manager:1.5.0
-    command: bash
+  base_build:
+    build: "."
+    image: stefanfoulis/timelapseapp-backend:local
 
-  base:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: timelapsemanager_base
+  base: &BASE
+    image: stefanfoulis/timelapseapp-backend:local
+    depends_on:
+      - "base_build"
+      - "db"
+      - "rabbitmq"
     command: bash
-    volumes:
-      - ".:/app:rw"
-      - "./data:/data:rw"
-#      - "/Volumes/Timelapse/images:/data/media/timelapse-images:rw"
     env_file:
       - ".env-local"
       - ".env-local-secrets"
-    entrypoint: ["/tini", "--", ]
+    volumes:
+      - "timelapseapp-backend-src-sync:/app:rw"
+      - "../timelapseapp-data:/data"
 
   web:
-    extends: base
-    image: timelapsemanager_base
-    build: ""
-    ports:
-      - "49893:80"
-      - "3000:3000"
+    <<: *BASE
     command: python manage.py runserver 0.0.0.0:80
     environment:
-      VIRTUAL_HOST: timelapse-manager.aldryn.me
+      VIRTUAL_HOST: timelapseapp-backend.divio.me
 
   worker:
-    extends: base
-    image: timelapsemanager_base
-    build: ""
+    <<: *BASE
     command: aldryn-celery worker
 
   beat:
-    extends: base
-    image: timelapsemanager_base
-    build: ""
+    <<: *BASE
     command: aldryn-celery beat
 
   cam:
-    extends: base
-    image: timelapsemanager_base
-    build: ""
+    <<: *BASE
     command: aldryn-celery cam
 
   db:
@@ -62,11 +47,14 @@ services:
   rabbitmq:
     image: rabbitmq:3.5-management
     hostname: rabbitmq
-    ports:
-      - "35672:15672"
     expose:
       - "15672"
     environment:
       RABBITMQ_ERLANG_COOKIE: "secret cookie here"
-      VIRTUAL_HOST: "timelapse-manager-rabbitmq.aldryn.me"
+      VIRTUAL_HOST: "timelapseapp-rabbitmq.divio.me"
       VIRTUAL_PORT: 15672
+
+
+volumes:
+  timelapseapp-backend-src-sync:
+    external: true
