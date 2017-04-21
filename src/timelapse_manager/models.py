@@ -10,7 +10,6 @@ from django.db.models import Q
 from django.utils.encoding import python_2_unicode_compatible
 
 from chainablemanager.manager import ChainableManager
-from easy_thumbnails.fields import ThumbnailerImageField
 
 from . import storage
 
@@ -117,24 +116,24 @@ class Image(UUIDAuditedModel):
         max_length=255, blank=True, default='', db_index=True)
     shot_at = models.DateTimeField(
         null=True, blank=True, default=None, db_index=True)
-    original = ThumbnailerImageField(
+    original = models.ImageField(
         null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage)
     original_md5 = models.CharField(
         max_length=32, blank=True, default='', db_index=True)
-    scaled_at_160x120 = ThumbnailerImageField(
+    scaled_at_160x120 = models.ImageField(
         null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage,
         upload_to=partial(storage.upload_to_thumbnail, size='160x120'))
     scaled_at_160x120_md5 = models.CharField(
         max_length=32, blank=True, default='', db_index=True)
-    scaled_at_320x240 = ThumbnailerImageField(
+    scaled_at_320x240 = models.ImageField(
         null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage,
         upload_to=partial(storage.upload_to_thumbnail, size='320x240'))
     scaled_at_320x240_md5 = models.CharField(
         max_length=32, blank=True, default='', db_index=True)
-    scaled_at_640x480 = ThumbnailerImageField(
+    scaled_at_640x480 = models.ImageField(
         null=True, blank=True, default='', max_length=255, db_index=True,
         storage=storage.timelapse_storage,
         upload_to=partial(storage.upload_to_thumbnail, size='640x480'))

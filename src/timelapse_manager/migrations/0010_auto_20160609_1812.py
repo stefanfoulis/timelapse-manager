@@ -25,6 +25,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='movierendering',
             name='file',
-            field=models.FileField(blank=True, db_index=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.S3TimelapseStorage(), upload_to=timelapse_manager.storage.upload_to_movie_rendering),
+            field=models.FileField(blank=True, db_index=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.default_timelapse_storage, upload_to=timelapse_manager.storage.upload_to_movie_rendering),
         ),
     ]

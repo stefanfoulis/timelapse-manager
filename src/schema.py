@@ -1,19 +1,25 @@
 # -*- coding: utf-8 -*-
 import graphene
-import graphene.relay
-
+from graphene.relay import Node
 import timelapse_manager.schema
+
+from graphene_django.debug import DjangoDebug
 
 
 class Query(
     timelapse_manager.schema.Query,
+    graphene.ObjectType,
 ):
-    # This class will inherit from multiple Queries
-    # as we begin to add more apps to our project
-    node = graphene.relay.NodeField()
+    debug = graphene.Field(DjangoDebug, name='__debug')
+    node = Node.Field()
 
 
 schema = graphene.Schema(
-    name='Schema',
     query=Query,
+    types=[
+        timelapse_manager.schema.UserNode,
+        timelapse_manager.schema.DayNode,
+        timelapse_manager.schema.ImageNode,
+        timelapse_manager.schema.CameraNode,
+    ]
 )

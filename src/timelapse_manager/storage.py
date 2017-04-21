@@ -191,3 +191,7 @@ def upload_to_movie_rendering(instance, filename):
         filename=filename,
         camera=instance.movie.camera.name,
     )
+
+
+def default_timelapse_storage():
+    pass

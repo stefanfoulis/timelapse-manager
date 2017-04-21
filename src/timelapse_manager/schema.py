@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
-
-import django_filters
 import graphene
-from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django_filters import FilterSet
-from graphene import relay
-from graphql_relay import from_global_id
-from graphene.core.types import LazyType
+from graphene.relay import Node
 
-from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
+from graphene_django.types import DjangoObjectType
 
-from timelapse_manager import schema_filters
+from . import schema_filters
 from . import models
 from django.contrib.auth import models as auth_models
 
@@ -25,20 +18,15 @@ def get_url(instance, fieldname):
     return ''
 
 
-class Image(DjangoNode):
+class ImageNode(DjangoObjectType):
     class Meta:
         model = models.Image
-        filter_fields = {
-            'name': ['exact', 'icontains', 'istartswith'],
-            'shot_at': ['exact', 'icontains', 'istartswith'],
-            'original': ['exact', 'icontains', 'istartswith'],
-            'original_md5': ['exact', 'icontains', 'istartswith'],
-        }
+        interfaces = (Node,)
 
-    original_url = graphene.StringField(source='original')
-    scaled_at_160x120_url = graphene.StringField(source='scaled_at_160x120')
-    scaled_at_320x240_url = graphene.StringField(source='scaled_at_320x240')
-    scaled_at_640x480_url = graphene.StringField(source='scaled_at_640x480')
+    original_url = graphene.String(source='original')
+    scaled_at_160x120_url = graphene.String(source='scaled_at_160x120')
+    scaled_at_320x240_url = graphene.String(source='scaled_at_320x240')
+    scaled_at_640x480_url = graphene.String(source='scaled_at_640x480')
 
     @graphene.resolve_only_args
     def resolve_original_url(self):
@@ -57,41 +45,38 @@ class Image(DjangoNode):
         return get_url(self.instance, 'scaled_at_640x480')
 
 
-class Day(DjangoNode):
+class DayNode(DjangoObjectType):
     class Meta:
         model = models.Day
-        filter_fields = [
-            'date',
-        ]
+        interfaces = (Node,)
 
-    images = DjangoFilterConnectionField(Image)
-    key_frames = DjangoFilterConnectionField(Image)
+    images = DjangoFilterConnectionField(ImageNode)
+    key_frames = DjangoFilterConnectionField(ImageNode)
 
-    @graphene.with_context
     def resolve_images(self, args, context, info):
         return self.instance.images.all()
 
-    @graphene.with_context
     def resolve_key_frames(self, args, context, info):
         return self.instance.key_frames.all()
 
 
-class Camera(DjangoNode):
+class CameraNode(DjangoObjectType):
     class Meta:
         model = models.Camera
+        interfaces = (Node,)
         filter_fields = {
             'name': ['exact', 'icontains', 'istartswith'],
         }
 
     days = DjangoFilterConnectionField(
-        Day,
+        DayNode,
         filterset_class=schema_filters.DayFilter,
     )
     images = DjangoFilterConnectionField(
-        Image,
+        ImageNode,
         filterset_class=schema_filters.ImageFilter,
     )
-    latest_image = graphene.Field(Image)
+    latest_image = graphene.Field(ImageNode)
 
     @graphene.resolve_only_args
     def resolve_latest_image(self):
@@ -103,9 +88,10 @@ class Camera(DjangoNode):
         ).order_by('-shot_at').first()
 
 
-class User(DjangoNode):
+class UserNode(DjangoObjectType):
     class Meta:
         model = auth_models.User
+        interfaces = (Node,)
     only_fields = (
         'username',
         'first_name',
@@ -116,8 +102,8 @@ class User(DjangoNode):
     exclude_fields = (
         'password',
     )
-    images = DjangoFilterConnectionField(Image)
-    latest_image = graphene.Field(Image)
+    images = DjangoFilterConnectionField(ImageNode)
+    latest_image = graphene.Field(ImageNode)
 
     @graphene.resolve_only_args
     def resolve_images(self, first=None):
@@ -134,28 +120,29 @@ class User(DjangoNode):
         ).order_by('-shot_at').first()
 
 
-class Query(graphene.ObjectType):
-    image = relay.NodeField(Image)
-    all_images = DjangoFilterConnectionField(Image)
-
-    camera = relay.NodeField(Camera)
-    all_cameras = DjangoFilterConnectionField(Camera)
-    default_camera = graphene.Field(Camera)
-
-    day = relay.NodeField(Day)
-    all_days = DjangoFilterConnectionField(
-        Day,
-        filterset_class=schema_filters.DayFilter
+class Query(graphene.AbstractType):
+    image = Node.Field(ImageNode)
+    all_images = DjangoFilterConnectionField(
+        ImageNode,
+        # filterset_class=schema_filters.ImageFilter,
     )
 
-    viewer = graphene.Field(User)
+    camera = Node.Field(CameraNode)
+    all_cameras = DjangoFilterConnectionField(CameraNode)
+    default_camera = graphene.Field(CameraNode)
 
-    @graphene.with_context
+    day = Node.Field(DayNode)
+    all_days = DjangoFilterConnectionField(
+        DayNode,
+        # filterset_class=schema_filters.DayFilter,
+    )
+
+    viewer = graphene.Field(UserNode)
+
     def resolve_viewer(self, args, context, info):
         if context.user.is_anonymous():
             return None
-        return User(context.user)
+        return UserNode(context.user)
 
-    @graphene.with_context
     def resolve_default_camera(self, args, context, info):
-        return Camera(models.Camera.objects.all().first())
+        return CameraNode(models.Camera.objects.all().first())

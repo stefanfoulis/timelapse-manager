@@ -38,21 +38,21 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='image',
             name='original',
-            field=easy_thumbnails.fields.ThumbnailerImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.S3TimelapseStorage(), upload_to=b''),
+            field=models.ImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.default_timelapse_storage, upload_to=b''),
         ),
         migrations.AlterField(
             model_name='image',
             name='scaled_at_160x120',
-            field=easy_thumbnails.fields.ThumbnailerImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.S3TimelapseStorage(), upload_to=functools.partial(timelapse_manager.storage.upload_to_thumbnail, *(), **{b'size': '160x120'})),
+            field=models.ImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.default_timelapse_storage, upload_to=functools.partial(timelapse_manager.storage.upload_to_thumbnail, *(), **{b'size': '160x120'})),
         ),
         migrations.AlterField(
             model_name='image',
             name='scaled_at_320x240',
-            field=easy_thumbnails.fields.ThumbnailerImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.S3TimelapseStorage(), upload_to=functools.partial(timelapse_manager.storage.upload_to_thumbnail, *(), **{b'size': '320x240'})),
+            field=models.ImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.default_timelapse_storage, upload_to=functools.partial(timelapse_manager.storage.upload_to_thumbnail, *(), **{b'size': '320x240'})),
         ),
         migrations.AlterField(
             model_name='image',
             name='scaled_at_640x480',
-            field=easy_thumbnails.fields.ThumbnailerImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.S3TimelapseStorage(), upload_to=functools.partial(timelapse_manager.storage.upload_to_thumbnail, *(), **{b'size': '640x480'})),
+            field=models.ImageField(blank=True, default='', max_length=255, null=True, storage=timelapse_manager.storage.default_timelapse_storage, upload_to=functools.partial(timelapse_manager.storage.upload_to_thumbnail, *(), **{b'size': '640x480'})),
         ),
     ]
